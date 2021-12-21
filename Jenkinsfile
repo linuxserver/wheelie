@@ -395,6 +395,9 @@ pipeline {
           sh '''#! /bin/bash
                 set -e
                 echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+                git config --local user.email "ci@linuxserver.io"
+                git config --local user.name "LinuxServer-CI"
+                git checkout main
                 mkdir -p build-alpine build-ubuntu
                 for distro in alpine-3.14 alpine-3.13 ubuntu-focal ubuntu-bionic; do
                   for arch in amd64 arm64v8 arm32v7 arm32v8; do
@@ -445,8 +448,6 @@ pipeline {
           sh '''#! /bin/bash
                 set -e
                 echo "updating git repo as necessary"
-                git config --local user.email "ci@linuxserver.io"
-                git config --local user.name "LinuxServer-CI"
                 git add . || :
                 git commit -m '[bot] Updating indices' || :
                 git push || :
