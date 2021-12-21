@@ -428,7 +428,7 @@ pipeline {
                       echo "**** ${wheel} for ${os} is being uploaded to aws ****"
                       UPLOADED="${UPLOADED}\\n${wheel}" 
                       docker exec s3cmd s3cmd put --acl-public "/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
-                      sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\n    <br />\n\n</body>|" "docs/${os}/index.html"
+                      sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\\n    <br />\\n\\n</body>|" "docs/${os}/index.html"
                     else
                       echo "**** ${wheel} for ${os} already processed, skipping ****"
                     fi
