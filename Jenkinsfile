@@ -355,17 +355,17 @@ pipeline {
               mkdir -p build-alpine build-ubuntu
               for distro in alpine-3.14 alpine-3.13 ubuntu-focal ubuntu-bionic; do
                 for arch in arm64v8 arm32v7 arm32v8; do
-                  docker pull ghcr.io/wheelie/${arch}-${distro}
+                  docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
                 done
                 for arch in amd64 arm64v8 arm32v7 arm32v8; do
-                  docker create --name ${arch}-${distro} ${arch}-${distro}
+                  docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro}
                   if echo "${distro}" | grep -q "alpine"; then
                     docker cp ${arch}-${distro}:/build/. build-alpine/
                   else
                     docker cp ${arch}-${distro}:/build/. build-ubuntu/
                   fi
                   docker rm ${arch}-${distro}
-                  docker rmi ${arch}-${distro}
+                  docker rmi ghcr.io/linuxserver/wheelie:${arch}-${distro}
                 done
               done
            '''
