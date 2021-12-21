@@ -25,45 +25,90 @@ pipeline {
         stage('Build amd64 alpine 3.14') {
           steps {
             echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
             sh "docker build \
-              --no-cache --pull -t wheelie:amd64-alpine-3.14 \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-alpine-3.14 \
               --build-arg DISTRO=alpine \
               --build-arg DISTROVER=3.14 \
               --build-arg ARCH=amd64 \
               --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-alpine-3.14"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-alpine-3.14 || :'''
           }
         }
         stage('Build amd64 alpine 3.13') {
+          agent {
+            label 'X86-64-MULTI'
+          }
           steps {
             echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
             sh "docker build \
-              --no-cache --pull -t wheelie:amd64-alpine-3.13 \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-alpine-3.13 \
               --build-arg DISTRO=alpine \
               --build-arg DISTROVER=3.13 \
               --build-arg ARCH=amd64 \
               --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-alpine-3.13"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-alpine-3.13 || :'''
           }
         }
         stage('Build amd64 ubuntu focal') {
+          agent {
+            label 'X86-64-MULTI'
+          }
           steps {
             echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
             sh "docker build \
-              --no-cache --pull -t wheelie:amd64-ubuntu-focal \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal \
               --build-arg DISTRO=ubuntu \
               --build-arg DISTROVER=focal \
               --build-arg ARCH=amd64 \
               --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal || :'''
           }
         }
         stage('Build amd64 ubuntu bionic') {
+          agent {
+            label 'X86-64-MULTI'
+          }
           steps {
             echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
             sh "docker build \
-              --no-cache --pull -t wheelie:amd64-ubuntu-bionic \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic \
               --build-arg DISTRO=ubuntu \
               --build-arg DISTROVER=bionic \
               --build-arg ARCH=amd64 \
               --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic || :'''
           }
         }
         stage('Build arm64v8 alpine 3.14') {
@@ -354,10 +399,8 @@ pipeline {
               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
               mkdir -p build-alpine build-ubuntu
               for distro in alpine-3.14 alpine-3.13 ubuntu-focal ubuntu-bionic; do
-                for arch in arm64v8 arm32v7 arm32v8; do
-                  docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
-                done
                 for arch in amd64 arm64v8 arm32v7 arm32v8; do
+                  docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
                   docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro}
                   if echo "${distro}" | grep -q "alpine"; then
                     docker cp ${arch}-${distro}:/build/. build-alpine/
