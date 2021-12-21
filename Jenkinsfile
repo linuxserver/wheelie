@@ -388,29 +388,70 @@ pipeline {
     }
     stage ('Push artifacts') {
       steps {
-        sh '''#! /bin/bash
-              set -e
-              echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-              mkdir -p build-alpine build-ubuntu
-              for distro in alpine-3.14 alpine-3.13 ubuntu-focal ubuntu-bionic; do
-                for arch in amd64 arm64v8 arm32v7 arm32v8; do
-                  docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
-                  docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
-                  if echo "${distro}" | grep -q "alpine"; then
-                    docker cp ${arch}-${distro}:/build/. build-alpine/
-                  else
-                    docker cp ${arch}-${distro}:/build/. build-ubuntu/
-                  fi
-                  docker rm ${arch}-${distro}
-                  docker rmi ghcr.io/linuxserver/wheelie:${arch}-${distro}
+        withCredentials([
+          string(credentialsId: 'ci-tests-s3-key-id', variable: 'S3_KEY'),
+          string(credentialsId: 'ci-tests-s3-secret-access-key	', variable: 'S3_SECRET') 
+          ]) {
+          sh '''#! /bin/bash
+                set -e
+                echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+                mkdir -p build-alpine build-ubuntu
+                for distro in alpine-3.14 alpine-3.13 ubuntu-focal ubuntu-bionic; do
+                  for arch in amd64 arm64v8 arm32v7 arm32v8; do
+                    docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
+                    docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
+                    if echo "${distro}" | grep -q "alpine"; then
+                      docker cp ${arch}-${distro}:/build/. build-alpine/
+                    else
+                      docker cp ${arch}-${distro}:/build/. build-ubuntu/
+                    fi
+                    docker rm ${arch}-${distro}
+                    docker rmi ghcr.io/linuxserver/wheelie:${arch}-${distro}
+                  done
                 done
-              done
-           '''
-        sh '''#! /bin/bash
-              set -e
-              ls -al build-ubuntu
-              ls -al build-alpine
-           '''
+             '''
+          sh '''#! /bin/bash
+                set -e
+                echo "setting up s3cmd"
+                docker run -d --rm \
+                  --name s3cmd \
+                  -v build-ubuntu:/build-ubuntu \
+                  -v build-alpine:/build-alpine \
+                  -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
+                  -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
+                  ghcr.io/linuxserver/baseimage-alpine:3.14
+                docker exec s3cmd /bin/bash -c 'apk add --no-cache py3-pip && pip install s3cmd'
+                echo "pushing wheels as necessary"
+                for os in ubuntu alpine; do
+                  for wheel in $(ls build-${os}/); do
+                    if ! grep -q "${wheel}" "docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
+                      echo "**** ${wheel} for ${os} is being uploaded to aws ****"
+                      UPLOADED="${UPLOADED}\\n${wheel}" 
+                      docker exec s3cmd s3cmd put /build-${os}/${wheel} s3://wheels.linuxserver.io/${os}/${wheel} --acl public-read
+                      sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\n    <br />\n\n</body>|" "docs/${os}/index.html"
+                    else
+                      echo "**** ${wheel} for ${os} already processed, skipping ****"
+                    fi
+                  done
+                done
+                if [ -n "${UPLOADED}" ]; then
+                  echo -e "**** Uploaded wheels are: **** ${UPLOADED}"
+                else
+                  echo "No wheels were uploaded"
+                fi
+                docker stop s3cmd
+                rm -rf build-ubuntu build-alpine
+             '''
+          sh '''#! /bin/bash
+                set -e
+                echo "updating git repo as necessary"
+                git config --local user.email "ci@linuxserver.io"
+                git config --local user.name "LinuxServer-CI"
+                git add . || :
+                git commit -m '[bot] Updating indices' || :
+                git push || :
+             '''
+        }
       }
     }
   }
