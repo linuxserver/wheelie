@@ -18,9 +18,6 @@ pipeline {
   }
   stages {
     stage('Build-Multi') {
-      when {
-        environment name: 'EXIT_STATUS', value: ''
-      }
       parallel {
         stage('Build amd64 alpine 3.14') {
           steps {
@@ -390,9 +387,6 @@ pipeline {
       }
     }
     stage ('Push artifacts') {
-      when {
-        environment name: 'EXIT_STATUS', value: ''
-      }
       steps {
         sh '''#! /bin/bash
               set -e
@@ -418,6 +412,25 @@ pipeline {
               ls -al build-alpine
            '''
       }
+    }
+  }
+  post {
+    always {
+      script{
+        if (currentBuild.currentResult == "SUCCESS"){
+          sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 1681177,\
+                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  Success\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** '${PACKAGES}'\\n"}],\
+                 "username": "Jenkins"}' ${BUILDS_DISCORD} '''
+        }
+        else {
+          sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 16711680,\
+                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  failure\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** '${PACKAGES}'\\n"}],\
+                 "username": "Jenkins"}' ${BUILDS_DISCORD} '''
+        }
+      }
+    }
+    cleanup {
+      cleanWs()
     }
   }
 }
