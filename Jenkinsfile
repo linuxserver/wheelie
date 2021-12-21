@@ -415,8 +415,8 @@ pipeline {
                 echo "setting up s3cmd"
                 docker run -d --rm \
                   --name s3cmd \
-                  -v build-ubuntu:/build-ubuntu \
-                  -v build-alpine:/build-alpine \
+                  -v ${PWD}/build-ubuntu:/build-ubuntu \
+                  -v ${PWD}/build-alpine:/build-alpine \
                   -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
                   -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
                   ghcr.io/linuxserver/baseimage-alpine:3.14
