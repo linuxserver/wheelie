@@ -458,6 +458,7 @@ pipeline {
   post {
     always {
       script{
+        docker stop s3cmd || :
         if (currentBuild.currentResult == "SUCCESS"){
           sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 1681177,\
                  "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  Success\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** '${PACKAGES}'\\n"}],\
