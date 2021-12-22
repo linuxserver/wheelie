@@ -1,0 +1,89 @@
+ARG ARCH=amd64
+
+FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.14 as builder
+
+ARG GRPC_BUILD_WITH_BORING_SSL_ASM=false
+ARG GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=true 
+ARG GRPC_PYTHON_BUILD_WITH_CYTHON=true 
+ARG GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY=true
+
+# install packages
+RUN \
+  echo "**** install build packages ****" && \
+  apk add --no-cache --virtual=build-dependencies \
+    autoconf \
+    ca-certificates \
+    cargo \
+    cmake \
+    eudev-dev \
+    ffmpeg-dev \
+    gcc \
+    g++ \
+    jq \
+    libffi-dev \
+    jpeg-dev \
+    libxml2-dev \
+    libxslt-dev \
+    make \
+    openblas-dev \
+    postgresql-dev \
+    python3-dev \
+    unixodbc-dev \
+    unzip && \
+  echo "**** install runtime packages ****" && \
+  apk add --no-cache --virtual=runtime-dependencies \
+    bluez-deprecated \
+    curl \
+    eudev-libs \
+    ffmpeg \
+    iputils \
+    libcap \
+    libjpeg-turbo \
+    libstdc++ \
+    libxslt \
+    mariadb-connector-c \
+    mariadb-connector-c-dev \
+    openssh-client \
+    openssl \
+    postgresql-libs \
+    py3-pip \
+    python3 \
+    tiff && \
+  echo "**** retrieve homeassistant ****" && \
+  mkdir -p \
+    /tmp/core && \
+  export HASS_RELEASE=$(curl -sX GET https://api.github.com/repos/home-assistant/core/releases/latest \
+    | jq -r .tag_name) && \
+  curl -o \
+  /tmp/core.tar.gz -L \
+  "https://github.com/home-assistant/core/archive/${HASS_RELEASE}.tar.gz" && \
+  tar xf \
+    /tmp/core.tar.gz -C \
+    /tmp/core --strip-components=1 && \
+  export HASS_BASE=$(cat /tmp/core/build.yaml \
+    | grep 'amd64: ' \
+    | cut -d: -f3) && \
+  echo "**** Updating pip and building wheels ****" && \
+  pip3 install -U pip==20.2 setuptools==57.5.0 wheel cython && \
+  mkdir -p /build && \
+  cd /tmp/core && \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
+    homeassistant==${HASS_RELEASE} && \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
+    -r requirements_all.txt && \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
+    -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
+  echo "**** cleanup ****" && \
+  apk del --purge \
+    build-dependencies \
+    runtime-dependencies && \
+  rm -rf \
+    /tmp/* \
+    /var/lib/apt/lists/* \
+    /var/tmp/* \
+    ${HOME}/.cargo \
+    ${HOME}/.cache
+
+FROM scratch as artifacts
+
+COPY --from=builder /build /build

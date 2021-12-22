@@ -14,7 +14,6 @@ pipeline {
   environment {
     BUILDS_DISCORD=credentials('build_webhook_url')
     GITHUB_TOKEN=credentials('498b4638-2d02-4ce5-832d-8a57d01d97ab')
-    EXIT_STATUS=''
   }
   stages {
     stage('Build-Multi') {
@@ -444,6 +443,7 @@ pipeline {
                 else
                   echo "No wheels were uploaded"
                 fi
+                echo "Stopping s3cmd and removing temp files"
                 docker stop s3cmd
                 rm -rf build-ubuntu build-alpine
              '''
