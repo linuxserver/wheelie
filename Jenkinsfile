@@ -434,7 +434,6 @@ pipeline {
                       UPLOADED="${UPLOADED}\\n${wheel}" 
                       docker exec s3cmd s3cmd put --acl-public "/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
                       sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\\n    <br />\\n\\n</body>|" "${TEMPDIR}/wheelie/docs/${os}/index.html"
-                      GITPUSH="true"
                     else
                       echo "**** ${wheel} for ${os} already processed, skipping ****"
                     fi
@@ -450,15 +449,11 @@ pipeline {
              '''
           sh '''#! /bin/bash
                 set -e
-                if [ "${GITPUSH}" == "true" ]; then
-                  echo "updating git repo"
-                  cd ${TEMPDIR}/wheelie
-                  git add . || :
-                  git commit -m '[bot] Updating indices' || :
-                  git push https://LinuxServer-CI:${GITHUB_TOKEN}@github.com/linuxserver/wheelie.git --all || :
-                else
-                  echo "no changes to git repo"
-                fi
+                echo "updating git repo as necessary"
+                cd ${TEMPDIR}/wheelie
+                git add . || :
+                git commit -m '[bot] Updating indices' || :
+                git push https://LinuxServer-CI:${GITHUB_TOKEN}@github.com/linuxserver/wheelie.git --all || :
              '''
         }
       }
@@ -467,7 +462,10 @@ pipeline {
   post {
     always {
       script{
-        sh ''' docker stop s3cmd || : '''
+        sh '''#! /bin/bash
+              docker stop s3cmd || :
+              rm -rf ${TEMPDIR}/wheelie
+           '''
         if (currentBuild.currentResult == "SUCCESS"){
           sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 1681177,\
                  "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  Success\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** '${PACKAGES}'\\n"}],\
