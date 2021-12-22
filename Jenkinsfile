@@ -394,10 +394,6 @@ pipeline {
           ]) {
           sh '''#! /bin/bash
                 set -e
-                echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-                git config --local user.email "ci@linuxserver.io"
-                git config --local user.name "LinuxServer-CI"
-                git checkout main
                 mkdir -p build-alpine build-ubuntu
                 for distro in alpine-3.14 alpine-3.13 ubuntu-focal ubuntu-bionic; do
                   for arch in amd64 arm64v8 arm32v7 arm32v8; do
@@ -413,8 +409,14 @@ pipeline {
                   done
                 done
              '''
+          script {
+            env.TEMPDIR = sh(
+              script: '''mktemp -d ''',
+              returnStdout: true).trim()
+          }
           sh '''#! /bin/bash
                 set -e
+                git clone https://github.com/linuxserver/wheelie.git ${TEMPDIR}/wheelie
                 echo "setting up s3cmd"
                 docker run -d --rm \
                   --name s3cmd \
@@ -427,11 +429,12 @@ pipeline {
                 echo "pushing wheels as necessary"
                 for os in ubuntu alpine; do
                   for wheel in $(ls build-${os}/); do
-                    if ! grep -q "${wheel}" "docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
+                    if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
                       echo "**** ${wheel} for ${os} is being uploaded to aws ****"
                       UPLOADED="${UPLOADED}\\n${wheel}" 
                       docker exec s3cmd s3cmd put --acl-public "/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
-                      sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\\n    <br />\\n\\n</body>|" "docs/${os}/index.html"
+                      sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\\n    <br />\\n\\n</body>|" "${TEMPDIR}/wheelie/docs/${os}/index.html"
+                      GITPUSH="true"
                     else
                       echo "**** ${wheel} for ${os} already processed, skipping ****"
                     fi
@@ -447,10 +450,15 @@ pipeline {
              '''
           sh '''#! /bin/bash
                 set -e
-                echo "updating git repo as necessary"
-                git add . || :
-                git commit -m '[bot] Updating indices' || :
-                git push || :
+                if [ "${GITPUSH}" == "true" ]; then
+                  echo "updating git repo"
+                  cd ${TEMPDIR}/wheelie
+                  git add . || :
+                  git commit -m '[bot] Updating indices' || :
+                  git push https://LinuxServer-CI:${GITHUB_TOKEN}@github.com/linuxserver/wheelie.git --all || :
+                else
+                  echo "no changes to git repo"
+                fi
              '''
         }
       }
