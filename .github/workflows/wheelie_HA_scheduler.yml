@@ -63,7 +63,7 @@ jobs:
           else
             echo "**** No changes to the requirements files, skipping wheelie trigger, but triggering docker-homeassistant trigger ****"
             curl -iX POST \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Authorization: token ${{ secrets.CR_PAT }}" \
               -H "Accept: application/vnd.github.v3+json" \
               -d "{\"ref\":\"refs/heads/main\"}" \
               https://api.github.com/repos/linuxserver/docker-homeassistant/actions/workflows/external_trigger.yml/dispatches
