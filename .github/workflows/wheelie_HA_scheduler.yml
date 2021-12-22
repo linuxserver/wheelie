@@ -1,12 +1,12 @@
-name: Wheelie Scheduler
+name: Wheelie_HA Scheduler
 
 on:
   schedule:
-    - cron:  '00 * * * *'
+    - cron:  '20 * * * *'
   workflow_dispatch:
 
 jobs:
-  wheelie-scheduler:
+  wheelie-HA-scheduler:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repo
@@ -14,40 +14,26 @@ jobs:
 
       - name: Check for updates and trigger
         run: |
-          ALLPACKAGES=$(cat packages.txt)
-          DISTROS=$(cat distros.txt)
-          for DISTRO in ${DISTROS}; do
-            IMAGE=$(echo ${DISTRO} | awk -F'-' '{print $1}')
-            TAG=$(echo ${DISTRO} | awk -F'-' '{print $2}')
-            docker run -d --rm --name ${IMAGE}-${TAG} ghcr.io/linuxserver/baseimage-${IMAGE}:${TAG}
-            docker exec ${IMAGE}-${TAG} bash -c "\
-              if [ -f /usr/bin/apt ]; then \
-                apt-get update && apt-get install -y python3-pip; \
-              else \
-                apk add --no-cache py3-pip; \
-              fi && \
-              pip3 install -U pip"
-          done
-          for PACKAGE in ${ALLPACKAGES}; do
-            for DISTRO in ${DISTROS}; do
-              IMAGE=$(echo ${DISTRO} | awk -F'-' '{print $1}')
-              TAG=$(echo ${DISTRO} | awk -F'-' '{print $2}')
-              VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "pip install ${PACKAGE}== 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
-              CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
-              if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}" "docs/${IMAGE}/index.html"; then
-                echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
-                PACKAGES="${PACKAGE} ${PACKAGES}"
-                break
-              else
-                echo "**** ${PACKAGE}-${VERSION} wheel already built for ${DISTRO}, skipping ****"
-              fi
-            done
-          done
-          if [ -n "$PACKAGES" ]; then
+          export HASS_RELEASE=$(curl -sfX GET https://api.github.com/repos/home-assistant/core/releases/latest \
+            | jq -r .tag_name)
+          echo "HASS_RELEASE is ${HASS_RELEASE}"
+          export HASS_BASE=$(curl -sfL https://raw.githubusercontent.com/home-assistant/core/${HASS_RELEASE}/build.yaml \
+            | grep 'amd64: ' \
+            | cut -d: -f3)
+          echo "HASS_BASE is ${HASS_BASE}"
+          echo "Downloading upstream requirements files. . ."
+          mkdir -p upstream
+          curl -sfL https://raw.githubusercontent.com/home-assistant/core/${HASS_RELEASE}/requirements.txt -o upstream/requirements.txt
+          curl -sfL https://raw.githubusercontent.com/home-assistant/core/${HASS_RELEASE}/requirements_all.txt -o upstream/requirements_all.txt
+          curl -sfL https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt -o upstream/requirements_base.txt
+          echo "Comparing local files to upstream. . ."
+          CURRENT_HASH=$(grep -hs ^ HA-reqs/* | md5sum | cut -c1-8)
+          NEW_HASH=$(grep -hs ^ upstream/* | md5sum | cut -c1-8)
+          if [ ${CURRENT_HASH} != ${NEW_HASH} ]; then
             if [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelie/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieHA/lastBuild/api/json | jq -r '.building') == "false" ]; then
-              echo "**** Triggering wheelie for packages: ${PACKAGES}****"
-              response=$(curl -iX POST --data-urlencode "PACKAGES=${PACKAGES}" \
-                https://ci.linuxserver.io/job/Tools/job/wheelie/buildWithParameters \
+              echo "**** Triggering wheelie for HomeAssistant ****"
+              response=$(curl -iX POST \
+                https://ci.linuxserver.io/job/Tools/job/wheelieHA/build \
                 --user ${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }} | grep -i location | sed "s|^[L|l]ocation: \(.*\)|\1|")
               echo "**** Jenkins job queue url: ${response%$'\r'} ****"
               echo "**** Sleeping 10 seconds until job starts ****"
@@ -62,18 +48,23 @@ jobs:
                 --data-urlencode "description=GHA external trigger https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
                 --data-urlencode "Submit=Submit"
               echo "**** Notifying discord ****"
-              TRIGGER_REASON="Triggering wheelie for packages: ${PACKAGES}"
+              TRIGGER_REASON="Changes to HomeAssistant wheel requirements detected, triggering wheelie."
               curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://cdn.discordapp.com/avatars/354986384542662657/df91181b3f1cf0ef1592fbe18e0962d7.png","embeds": [{"color": 9802903,
                 "description": "**Build Triggered** \n**Reason:** '"${TRIGGER_REASON}"' \n**Build URL:** '"${buildurl}display/redirect"' \n"}],
                 "username": "Github Actions"}' ${{ secrets.DISCORD_WEBHOOK }}
             else
               echo "**** New packages are available but there is already an active Wheelie build, skipping ****"
               echo "**** Notifying Discord ****"
-              FAILURE_REASON="New packages are available but there is already an active Wheelie build, skipping."
+              FAILURE_REASON="Changes to HomeAssistant wheel requirements detected, but a wheelie build is already active, skipping for now."
               curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://cdn.discordapp.com/avatars/354986384542662657/df91181b3f1cf0ef1592fbe18e0962d7.png","embeds": [{"color": 9802903,
                 "description": "**Trigger Failed** \n**Reason:** '"${FAILURE_REASON}"' \n"}],
                 "username": "Github Actions"}' ${{ secrets.DISCORD_WEBHOOK }}
             fi
           else
-            echo "**** No new updates to any of the packages, skipping trigger ****"
+            echo "**** No changes to the requirements files, skipping wheelie trigger, but triggering docker-homeassistant trigger ****"
+            curl -iX POST \
+              -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -d "{\"ref\":\"refs/heads/main\"}" \
+              https://api.github.com/repos/linuxserver/docker-homeassistant/actions/workflows/external_trigger.yml/dispatches
           fi
