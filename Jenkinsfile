@@ -29,7 +29,17 @@ pipeline {
           }
         }
         stages {
-          stage ("Build ${MATRIXDISTRO} on ${MATRIXARCH}") {
+          stage('axis') {
+            agent none
+            steps {
+              script {
+                stage("${MATRIXDISTRO} on ${MATRIXARCH}") {
+                  print "${MATRIXDISTRO} on ${MATRIXARCH}"
+                }
+              }
+            }
+          }
+          stage ('Build') {
             agent {
               label "${MATRIXARCH}"
             }
