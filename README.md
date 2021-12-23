@@ -10,7 +10,7 @@ The wheels are downloaded from https://wheels.linuxserver.io
 Only 3 files are user configurable:
 - `packages.txt`: lists the packages for which the wheels are built.
 - `distros.txt`: lists the distros the wheels are built with.
-  - Should be in the format of either `ubuntu:focal` or `alpine:3.14` (only ubuntu and alpine versions are supported).
+  - Should be in the format of either `ubuntu-focal` or `alpine-3.14` (only ubuntu and alpine versions are supported).
   - Should only be updated if cpython version changes. For instance, alpine 3.14 and 3.15 both use `cp39` so their wheels should be identical, thus no need to add `alpine:3.15` as a new distro.
 - `Jenkinsfile`: if `distros.txt` is updated, [the matrix in Jenkinsfile](https://github.com/linuxserver/wheelie/blob/b5b61bc94d129fe5671db9768fd63f998a08c90d/Jenkinsfile#L28) must also be updated to match it as Jenkins pipelines don't support dynamix matrices.
 
