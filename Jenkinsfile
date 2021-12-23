@@ -67,17 +67,37 @@ pipeline {
                     else
                       INTERNALARCH="${ARCH}"
                     fi
-                    echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
                     docker build \
                       --no-cache --pull -t ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} \
                       --build-arg DISTRO=${DISTRONAME} \
                       --build-arg DISTROVER=${DISTROVER} \
                       --build-arg ARCH=${INTERNALARCH} \
                       --build-arg PACKAGES=${PACKAGES} .
-                    docker push ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER}
-                    docker rmi \
-                      ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} || :
                  '''
+              echo 'Pushing images to ghcr'
+              retry(5) {
+                    sh '''#! /bin/bash
+                          DISTRONAME=$(echo ${MATRIXDISTRO} | sed 's|-.*||')
+                          DISTROVER=$(echo ${MATRIXDISTRO} | sed 's|.*-||')
+                          if [ "${MATRIXARCH}" == "X86-64-MULTI" ]; then
+                            ARCH="amd64"
+                          elif [ "${MATRIXARCH}" == "ARM64" ]; then
+                            ARCH="arm64v8"
+                          elif [ "${MATRIXARCH}" == "ARMHF-WHEELIE-CHROOT" ]; then
+                            ARCH="arm32v8"
+                          else
+                            ARCH="arm32v7"
+                          fi
+                          if [ "${ARCH}" == "arm32v8" ]; then
+                            INTERNALARCH="arm32v7"
+                          else
+                            INTERNALARCH="${ARCH}"
+                          fi
+                          docker push ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER}
+                          docker rmi \
+                            ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} || :
+                       '''
+              }
             }
           }
         }

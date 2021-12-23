@@ -11,6 +11,7 @@ ARG PACKAGES
 COPY packages.txt /packages.txt
 
 RUN \
+  echo "**** Installing dependencies ****" && \
   if [ -f /usr/bin/apt ]; then \
     echo "**** Detected Ubuntu ****" && \
     apt-get update && \
@@ -52,6 +53,9 @@ RUN \
   fi && \
   pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${DISTRO}/" --no-cache-dir -v \
     ${PACKAGES} && \
+  echo "**** Wheels built are: ****" && \
+  ls /build && \
+  echo "**** Clean up ****" && \
   if [ -f /usr/bin/apt ]; then \
     echo "**** Detected Ubuntu ****" && \
     apt-get purge --auto-remove -y \
