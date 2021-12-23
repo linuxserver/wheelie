@@ -17,456 +17,456 @@ pipeline {
   }
   stages {
     stage('Build-Multi') {
-      matrix {
-        axes {
-          axis {
-            name 'MATRIXARCH'
-            values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-NATIVE', 'ARMHF-WHEELIE-CHROOT'
-          }
-          axis {
-            name 'MATRIXDISTRO'
-            values 'ubuntu-focal', 'ubuntu-bionic', 'alpine-3.14', 'alpine-3.13'
+      // matrix {
+      //   axes {
+      //     axis {
+      //       name 'MATRIXARCH'
+      //       values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-NATIVE', 'ARMHF-WHEELIE-CHROOT'
+      //     }
+      //     axis {
+      //       name 'MATRIXDISTRO'
+      //       values 'ubuntu-focal', 'ubuntu-bionic', 'alpine-3.14', 'alpine-3.13'
+      //     }
+      //   }
+      //   stages {
+      //     stage('axis') {
+      //       agent none
+      //       steps {
+      //         script {
+      //           stage("${MATRIXDISTRO} on ${MATRIXARCH}") {
+      //             print "${MATRIXDISTRO} on ${MATRIXARCH}"
+      //           }
+      //         }
+      //       }
+      //     }
+      //     stage ('Build') {
+      //       agent {
+      //         label "${MATRIXARCH}"
+      //       }
+      //       steps {
+      //         echo "Running on node: ${NODE_NAME}"
+      //         echo 'Logging into Github'
+      //         script {
+      //           env.DISTRONAME = sh(
+      //             script: '''echo ${MATRIXDISTRO} | sed 's|-.*||' ''',
+      //             returnStdout: true).trim()
+      //         }
+      //         script {
+      //           env.DISTROVER = sh(
+      //             script: '''echo ${MATRIXDISTRO} | sed 's|.*-||' ''',
+      //             returnStdout: true).trim()
+      //         }
+      //         script {
+      //           env.ARCH = sh(
+      //             script: ''' #! /bin/bash
+      //                         if [ "${MATRIXARCH}" == "X86-64-MULTI" ]; then
+      //                           echo "amd64"
+      //                         elif [ "${MATRIXARCH}" == "ARM64" ]; then
+      //                           echo "arm64v8"
+      //                         elif [ "${MATRIXARCH}" == "ARMHF-WHEELIE-CHROOT" ]; then
+      //                           echo "arm32v8"
+      //                         else
+      //                           echo "arm32v7"
+      //                         fi
+      //                     ''',
+      //             returnStdout: true).trim()
+      //         }
+      //         script {
+      //           env.INTERNALARCH = sh(
+      //             script: ''' #! /bin/bash
+      //                         if [ "${ARCH}" == "arm32v8" ]; then
+      //                           echo "arm32v7"
+      //                         else
+      //                           echo "${ARCH}"
+      //                         fi
+      //                     ''',
+      //             returnStdout: true).trim()
+      //         }
+      //         sh '''#! /bin/bash
+      //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+      //            '''
+      //         sh "docker build \
+      //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} \
+      //           --build-arg DISTRO=${DISTRONAME} \
+      //           --build-arg DISTROVER=${DISTROVER} \
+      //           --build-arg ARCH=${INTERNALARCH} \
+      //           --build-arg PACKAGES=${PACKAGES} ."
+      //         retry(5) {
+      //           sh "docker push ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER}"
+      //         }
+      //         sh '''docker rmi \
+      //               ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} || :'''
+      //       }
+      //     }
+      //   }
+      // }
+      parallel {
+        stage('Build amd64 alpine 3.14') {
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-alpine-3.14 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.14 \
+              --build-arg ARCH=amd64 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-alpine-3.14"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-alpine-3.14 || :'''
           }
         }
-        stages {
-          stage('axis') {
-            agent none
-            steps {
-              script {
-                stage("${MATRIXDISTRO} on ${MATRIXARCH}") {
-                  print "${MATRIXDISTRO} on ${MATRIXARCH}"
-                }
-              }
-            }
+        stage('Build amd64 alpine 3.13') {
+          agent {
+            label 'X86-64-MULTI'
           }
-          stage ('Build') {
-            agent {
-              label "${MATRIXARCH}"
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-alpine-3.13 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.13 \
+              --build-arg ARCH=amd64 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-alpine-3.13"
             }
-            steps {
-              echo "Running on node: ${NODE_NAME}"
-              echo 'Logging into Github'
-              script {
-                env.DISTRONAME = sh(
-                  script: '''echo ${MATRIXDISTRO} | sed 's|-.*||' ''',
-                  returnStdout: true).trim()
-              }
-              script {
-                env.DISTROVER = sh(
-                  script: '''echo ${MATRIXDISTRO} | sed 's|.*-||' ''',
-                  returnStdout: true).trim()
-              }
-              script {
-                env.ARCH = sh(
-                  script: ''' #! /bin/bash
-                              if [ "${MATRIXARCH}" == "X86-64-MULTI" ]; then
-                                echo "amd64"
-                              elif [ "${MATRIXARCH}" == "ARM64" ]; then
-                                echo "arm64v8"
-                              elif [ "${MATRIXARCH}" == "ARMHF-WHEELIE-CHROOT" ]; then
-                                echo "arm32v8"
-                              else
-                                echo "arm32v7"
-                              fi
-                          ''',
-                  returnStdout: true).trim()
-              }
-              script {
-                env.INTERNALARCH = sh(
-                  script: ''' #! /bin/bash
-                              if [ "${ARCH}" == "arm32v8" ]; then
-                                echo "arm32v7"
-                              else
-                                echo "${ARCH}"
-                              fi
-                          ''',
-                  returnStdout: true).trim()
-              }
-              sh '''#! /bin/bash
-                    echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-                 '''
-              sh "docker build \
-                --no-cache --pull -t ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} \
-                --build-arg DISTRO=${DISTRONAME} \
-                --build-arg DISTROVER=${DISTROVER} \
-                --build-arg ARCH=${INTERNALARCH} \
-                --build-arg PACKAGES=${PACKAGES} ."
-              retry(5) {
-                sh "docker push ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER}"
-              }
-              sh '''docker rmi \
-                    ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} || :'''
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-alpine-3.13 || :'''
+          }
+        }
+        stage('Build amd64 ubuntu focal') {
+          agent {
+            label 'X86-64-MULTI'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=focal \
+              --build-arg ARCH=amd64 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal"
             }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal || :'''
+          }
+        }
+        stage('Build amd64 ubuntu bionic') {
+          agent {
+            label 'X86-64-MULTI'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=bionic \
+              --build-arg ARCH=amd64 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic || :'''
+          }
+        }
+        stage('Build arm64v8 alpine 3.14') {
+          agent {
+            label 'ARM64'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.14 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.14 \
+              --build-arg ARCH=arm64v8 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.14"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.14 || :'''
+          }
+        }
+        stage('Build arm64v8 alpine 3.13') {
+          agent {
+            label 'ARM64'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.13 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.13 \
+              --build-arg ARCH=arm64v8 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.13"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.13 || :'''
+          }
+        }
+        stage('Build arm64v8 ubuntu focal') {
+          agent {
+            label 'ARM64'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-focal \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=focal \
+              --build-arg ARCH=arm64v8 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-focal"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-focal || :'''
+          }
+        }
+        stage('Build arm64v8 ubuntu bionic') {
+          agent {
+            label 'ARM64'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-bionic \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=bionic \
+              --build-arg ARCH=arm64v8 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-bionic"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-bionic || :'''
+          }
+        }
+        stage('Build arm32v7 alpine 3.14') {
+          agent {
+            label 'ARMHF-WHEELIE-NATIVE'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.14 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.14 \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.14"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.14 || :'''
+          }
+        }
+        stage('Build arm32v7 alpine 3.13') {
+          agent {
+            label 'ARMHF-WHEELIE-NATIVE'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.13 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.13 \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.13"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.13 || :'''
+          }
+        }
+        stage('Build arm32v7 ubuntu focal') {
+          agent {
+            label 'ARMHF-WHEELIE-NATIVE'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-focal \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=focal \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-focal"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-focal || :'''
+          }
+        }
+        stage('Build arm32v7 ubuntu bionic') {
+          agent {
+            label 'ARMHF-WHEELIE-NATIVE'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-bionic \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=bionic \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-bionic"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-bionic || :'''
+          }
+        }
+        stage('Build arm32v8 alpine 3.14') {
+          agent {
+            label 'ARMHF-WHEELIE-CHROOT'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.14 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.14 \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.14"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.14 || :'''
+          }
+        }
+        stage('Build arm32v8 alpine 3.13') {
+          agent {
+            label 'ARMHF-WHEELIE-CHROOT'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.13 \
+              --build-arg DISTRO=alpine \
+              --build-arg DISTROVER=3.13 \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.13"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.13 || :'''
+          }
+        }
+        stage('Build arm32v8 ubuntu focal') {
+          agent {
+            label 'ARMHF-WHEELIE-CHROOT'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-focal \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=focal \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-focal"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-focal || :'''
+          }
+        }
+        stage('Build arm32v8 ubuntu bionic') {
+          agent {
+            label 'ARMHF-WHEELIE-CHROOT'
+          }
+          steps {
+            echo "Running on node: ${NODE_NAME}"
+            echo 'Logging into Github'
+            sh '''#! /bin/bash
+                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+               '''
+            sh "docker build \
+              --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-bionic \
+              --build-arg DISTRO=ubuntu \
+              --build-arg DISTROVER=bionic \
+              --build-arg ARCH=arm32v7 \
+              --build-arg PACKAGES=${PACKAGES} ."
+            retry(5) {
+              sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-bionic"
+            }
+            sh '''docker rmi \
+                  ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-bionic || :'''
           }
         }
       }
-    //   parallel {
-    //     stage('Build amd64 alpine 3.14') {
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-alpine-3.14 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.14 \
-    //           --build-arg ARCH=amd64 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:amd64-alpine-3.14"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:amd64-alpine-3.14 || :'''
-    //       }
-    //     }
-    //     stage('Build amd64 alpine 3.13') {
-    //       agent {
-    //         label 'X86-64-MULTI'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-alpine-3.13 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.13 \
-    //           --build-arg ARCH=amd64 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:amd64-alpine-3.13"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:amd64-alpine-3.13 || :'''
-    //       }
-    //     }
-    //     stage('Build amd64 ubuntu focal') {
-    //       agent {
-    //         label 'X86-64-MULTI'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=focal \
-    //           --build-arg ARCH=amd64 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:amd64-ubuntu-focal || :'''
-    //       }
-    //     }
-    //     stage('Build amd64 ubuntu bionic') {
-    //       agent {
-    //         label 'X86-64-MULTI'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=bionic \
-    //           --build-arg ARCH=amd64 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:amd64-ubuntu-bionic || :'''
-    //       }
-    //     }
-    //     stage('Build arm64v8 alpine 3.14') {
-    //       agent {
-    //         label 'ARM64'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.14 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.14 \
-    //           --build-arg ARCH=arm64v8 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.14"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.14 || :'''
-    //       }
-    //     }
-    //     stage('Build arm64v8 alpine 3.13') {
-    //       agent {
-    //         label 'ARM64'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.13 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.13 \
-    //           --build-arg ARCH=arm64v8 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.13"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm64v8-alpine-3.13 || :'''
-    //       }
-    //     }
-    //     stage('Build arm64v8 ubuntu focal') {
-    //       agent {
-    //         label 'ARM64'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-focal \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=focal \
-    //           --build-arg ARCH=arm64v8 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-focal"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-focal || :'''
-    //       }
-    //     }
-    //     stage('Build arm64v8 ubuntu bionic') {
-    //       agent {
-    //         label 'ARM64'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-bionic \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=bionic \
-    //           --build-arg ARCH=arm64v8 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-bionic"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm64v8-ubuntu-bionic || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v7 alpine 3.14') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-NATIVE'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.14 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.14 \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.14"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.14 || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v7 alpine 3.13') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-NATIVE'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.13 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.13 \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.13"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v7-alpine-3.13 || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v7 ubuntu focal') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-NATIVE'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-focal \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=focal \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-focal"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-focal || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v7 ubuntu bionic') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-NATIVE'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-bionic \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=bionic \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-bionic"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v7-ubuntu-bionic || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v8 alpine 3.14') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-CHROOT'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.14 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.14 \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.14"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.14 || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v8 alpine 3.13') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-CHROOT'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.13 \
-    //           --build-arg DISTRO=alpine \
-    //           --build-arg DISTROVER=3.13 \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.13"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v8-alpine-3.13 || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v8 ubuntu focal') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-CHROOT'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-focal \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=focal \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-focal"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-focal || :'''
-    //       }
-    //     }
-    //     stage('Build arm32v8 ubuntu bionic') {
-    //       agent {
-    //         label 'ARMHF-WHEELIE-CHROOT'
-    //       }
-    //       steps {
-    //         echo "Running on node: ${NODE_NAME}"
-    //         echo 'Logging into Github'
-    //         sh '''#! /bin/bash
-    //               echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-    //            '''
-    //         sh "docker build \
-    //           --no-cache --pull -t ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-bionic \
-    //           --build-arg DISTRO=ubuntu \
-    //           --build-arg DISTROVER=bionic \
-    //           --build-arg ARCH=arm32v7 \
-    //           --build-arg PACKAGES=${PACKAGES} ."
-    //         retry(5) {
-    //           sh "docker push ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-bionic"
-    //         }
-    //         sh '''docker rmi \
-    //               ghcr.io/linuxserver/wheelie:arm32v8-ubuntu-bionic || :'''
-    //       }
-    //     }
-    //   }
     }
     stage ('Push artifacts') {
       steps {
