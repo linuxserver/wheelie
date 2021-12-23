@@ -7,10 +7,16 @@ The wheels are downloaded from https://wheels.linuxserver.io
 
 ## Ubuntu and Alpine packages (glibc and musl respectively)
 
-Only 1 file is user configurable:
+Only 3 files are user configurable:
 - `packages.txt`: lists the packages for which the wheels are built.
+- `distros.txt`: lists the distros the wheels are built with.
+  - Should be in the format of either `ubuntu:focal` or `alpine:3.14` (only ubuntu and alpine versions are supported).
+  - Should only be updated if cpython version changes. For instance, alpine 3.14 and 3.15 both use `cp39` so their wheels should be identical, thus no need to add `alpine:3.15` as a new distro.
+- `Jenkinsfile`: if `distros.txt` is updated, [the matrix in Jenkinsfile](https://github.com/linuxserver/wheelie/blob/b5b61bc94d129fe5671db9768fd63f998a08c90d/Jenkinsfile#L28) must also be updated to match it as Jenkins pipelines don't support dynamix matrices.
 
-After modifying the above file, you can either wait until the scheduler runs (hourly) or manually trigger the github workflow `wheelie-scheduler.yml`
+After modifying the above 3 files, you can either wait until the scheduler runs (hourly) or manually trigger the github workflow `wheelie-scheduler.yml`
+
+The wheels will be built on native hardware for the following arches: `amd64`, `arm64v8`, `arm32v7` and `arm32v8` (Oracle and AWS armhf builders we use are native `arm64v8` but chrooted for 32bit and are identified by pip as `armv8l` when using the `arm32v7` baseimage).
 
 If adding a new package to `packages.txt` please make sure the Dockerfile has all the necessary dependencies installed, by testing locally first. To do that, follow the steps below:
 - Clone the repo: `git clone https://github.com/aptalca/wheels.git`
@@ -20,8 +26,11 @@ If adding a new package to `packages.txt` please make sure the Dockerfile has al
   - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.13 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=focal --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=bionic --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
+- The package name is case sensitive and should match the listing on pypi.org (ie. `PyYAML`).
 - If the build fails (or if it downloads a prebuilt wheel instead of building), you can add the necessary dependencies to the Dockerfile and/or change the arch, and test again (build cache should save some time).
 - Once confirmed, you can commit your changes to this repo and let the scheduler trigger in the next hourly.
+
+To manually trigger a package build for a single package or a list of packages, a new build with parameters can be triggered on Jenkins at the following link: https://ci.linuxserver.io/job/Tools/job/wheelie/. The `PACKAGE` parameter can be set to a package name, or a list of package names (space delimited). Specific package version can also be included (ie. `cryptography==36.0.1`), however if the version defined is not supported on an older cpython version (like Ubuntu bionic's cp36), the build will fail.
 
 ## Home Assistant packages (musl)
 
