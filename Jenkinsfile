@@ -457,7 +457,7 @@ pipeline {
     //       }
     //     }
     //   }
-    // }
+    }
     stage ('Push artifacts') {
       steps {
         withCredentials([
