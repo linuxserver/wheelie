@@ -553,6 +553,7 @@ pipeline {
     always {
       script{
         sh '''#! /bin/bash
+              echo "Final clean up, remove s3cmd if still exists"
               docker stop s3cmd || :
               rm -rf ${TEMPDIR}/wheelie
            '''
