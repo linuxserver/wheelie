@@ -53,8 +53,6 @@ RUN \
   fi && \
   pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${DISTRO}/" --no-cache-dir -v \
     ${PACKAGES} && \
-  echo "**** Wheels built are: ****" && \
-  ls /build && \
   echo "**** Clean up ****" && \
   if [ -f /usr/bin/apt ]; then \
     echo "**** Detected Ubuntu ****" && \
@@ -82,7 +80,9 @@ RUN \
     /var/lib/apt/lists/* \
     /var/tmp/* \
     ${HOME}/.cargo \
-    ${HOME}/.cache
+    ${HOME}/.cache && \
+  echo "**** Wheels built are: ****" && \
+  ls /build
 
 FROM scratch as artifacts
 

@@ -478,9 +478,11 @@ pipeline {
           ]) {
           sh '''#! /bin/bash
                 set -e
+                echo "Retrieving wheels"
                 mkdir -p build-alpine build-ubuntu
-                for distro in alpine-3.14 alpine-3.13 ubuntu-focal ubuntu-bionic; do
+                for distro in $(cat distros.txt); do
                   for arch in amd64 arm64v8 arm32v7 arm32v8; do
+                    echo "**** Retrieving wheels for ${arch}-${distro} ****"
                     docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
                     if echo "${distro}" | grep -q "alpine"; then
@@ -500,8 +502,8 @@ pipeline {
           }
           sh '''#! /bin/bash
                 set -e
+                echo "Cloning repo and preparing s3cmd"
                 git clone https://github.com/linuxserver/wheelie.git ${TEMPDIR}/wheelie
-                echo "setting up s3cmd"
                 docker run -d --rm \
                   --name s3cmd \
                   -v ${PWD}/build-ubuntu:/build-ubuntu \
@@ -510,6 +512,9 @@ pipeline {
                   -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
                   ghcr.io/linuxserver/baseimage-alpine:3.14
                 docker exec s3cmd /bin/bash -c 'apk add --no-cache py3-pip && pip install s3cmd'
+             '''
+          sh '''#! /bin/bash
+                set -e
                 echo "pushing wheels as necessary"
                 for os in ubuntu alpine; do
                   for wheel in $(ls build-${os}/); do
