@@ -27,6 +27,7 @@ RUN \
       make \
       python3-dev \
       python3-pip \
+      python3-venv \
       zlib1g-dev; \
   else \
     echo "**** Detected Alpine ****" && \
@@ -46,6 +47,8 @@ RUN \
       zlib-dev; \
   fi && \
   echo "**** Updating pip and building wheels ****" && \
+  python3 -m venv /build-env && \
+  . /build-env/bin/activate && \
   pip3 install -U pip setuptools wheel && \
   mkdir -p /build && \
   if [ -z "${PACKAGES}" ]; then \
@@ -68,6 +71,7 @@ RUN \
       make \
       python3-dev \
       python3-pip \
+      python3-venv \
       zlib1g-dev && \
     apt-get clean; \
   else \
