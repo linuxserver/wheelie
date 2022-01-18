@@ -32,9 +32,14 @@ jobs:
             for DISTRO in ${DISTROS}; do
               IMAGE=$(echo ${DISTRO} | awk -F'-' '{print $1}')
               TAG=$(echo ${DISTRO} | awk -F'-' '{print $2}')
+              if [ "${TAG}" == "3.15" ]; then
+                OS="alpine-3.15"
+              else
+                OS="${IMAGE}"
+              fi
               VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "pip install ${PACKAGE}== 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
               CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
-              if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}" "docs/${IMAGE}/index.html"; then
+              if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}" "docs/${OS}/index.html"; then
                 echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
                 PACKAGES="${PACKAGE} ${PACKAGES}"
                 break
