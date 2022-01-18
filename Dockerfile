@@ -54,7 +54,12 @@ RUN \
   if [ -z "${PACKAGES}" ]; then \
     PACKAGES=$(cat /packages.txt); \
   fi && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${DISTRO}/" --no-cache-dir -v \
+  if [ "${DISTROVER}" == "3.15" ]; then \
+    INDEXDISTRO="alpine-3.15"; \
+  else \
+    INDEXDISTRO="${DISTRO}"; \
+  fi && \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v \
     ${PACKAGES} && \
   echo "**** Clean up ****" && \
   if [ -f /usr/bin/apt ]; then \
