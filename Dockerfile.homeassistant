@@ -1,6 +1,6 @@
 ARG ARCH=amd64
 
-FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.14
+FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.15
 
 ARG GRPC_BUILD_WITH_BORING_SSL_ASM=false
 ARG GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=true 
@@ -67,11 +67,11 @@ RUN \
   pip3 install -U pip==20.2 setuptools==57.5.0 wheel cython && \
   mkdir -p /build && \
   cd /tmp/core && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
     homeassistant==${HASS_RELEASE} && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
     -r requirements_all.txt && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
     -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
   echo "**** cleanup ****" && \
   apk del --purge \

@@ -22,8 +22,8 @@ If adding a new package to `packages.txt` please make sure the Dockerfile has al
 - Clone the repo: `git clone https://github.com/aptalca/wheels.git`
 - Enter the folder: `cd wheels`
 - Test all the distros (may need to use the arm32v7 versions if amd64 already has prebuilt wheels in pypi):
+  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.15 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.14 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
-  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.13 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=focal --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=bionic --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
 - The package name is case sensitive and should match the listing on pypi.org (ie. `PyYAML`).
