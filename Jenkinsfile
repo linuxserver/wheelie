@@ -72,7 +72,7 @@ pipeline {
                       --build-arg DISTRO=${DISTRONAME} \
                       --build-arg DISTROVER=${DISTROVER} \
                       --build-arg ARCH=${INTERNALARCH} \
-                      --build-arg PACKAGES=${PACKAGES} .
+                      --build-arg PACKAGES=\"${PACKAGES}\" .
                  '''
               echo 'Pushing images to ghcr'
               retry(5) {
