@@ -67,12 +67,18 @@ RUN \
   pip3 install -U pip==20.2 setuptools==57.5.0 wheel cython && \
   mkdir -p /build && \
   cd /tmp/core && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
-    homeassistant==${HASS_RELEASE} && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
-    -r requirements_all.txt && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
-    -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
+  curl -sL https://github.com/pandas-dev/pandas/archive/refs/tags/v1.3.0.tar.gz -o /tmp/pandas.tar.gz && \
+  mkdir -p /tmp/pandas && \
+  tar xf /tmp/pandas.tar.gz -C /tmp/pandas --strip-components=1 && \
+  cd /tmp/pandas && \
+  sed -i 's|\(numpy==1\.19\.3.*Darwin..\).*",|\1",|' pyproject.toml && \
+  pip wheel --wheel-dir=/build --no-cache-dir . && \
+#  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
+#    homeassistant==${HASS_RELEASE} && \
+#  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
+#    -r requirements_all.txt && \
+#  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine-3.15/" --find-links="https://wheel-index.linuxserver.io/homeassistant-3.15/" --no-cache-dir \
+#    -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
   echo "**** cleanup ****" && \
   apk del --purge \
     build-dependencies \
