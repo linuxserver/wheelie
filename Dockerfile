@@ -54,7 +54,7 @@ RUN \
   if [ -z "${PACKAGES}" ]; then \
     PACKAGES=$(cat /packages.txt); \
   fi && \
-  if [ "${DISTROVER}" == "3.15" ]; then \
+  if [ "${DISTROVER}" = "3.15" ]; then \
     INDEXDISTRO="alpine-3.15"; \
   else \
     INDEXDISTRO="${DISTRO}"; \
