@@ -22,6 +22,7 @@ RUN \
       libffi-dev \
       libjpeg-dev \
       libssl-dev \
+      libwebp-dev \
       libxml2-dev \
       libxslt1-dev \
       make \
@@ -38,6 +39,7 @@ RUN \
       git \
       jpeg-dev \
       libffi-dev \
+      libwebp-dev \
       libxml2-dev \
       libxslt-dev \
       make \
