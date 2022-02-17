@@ -114,7 +114,7 @@ pipeline {
                 echo "Retrieving wheels"
                 mkdir -p build-alpine build-alpine-3.15 build-ubuntu
                 for distro in $(cat distros.txt); do
-                  for arch in amd64 arm64v8 arm32v7 arm32v8; do
+                  for arch in amd64 arm32v8 arm64v8 arm32v7; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
                     docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
