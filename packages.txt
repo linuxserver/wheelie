@@ -8,3 +8,4 @@ Pillow
 PyNaCl
 PyYAML
 grpcio
+bluepy

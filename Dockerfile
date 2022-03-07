@@ -60,7 +60,7 @@ RUN \
   echo "**** Updating pip and building wheels ****" && \
   python3 -m venv /build-env && \
   . /build-env/bin/activate && \
-  pip3 install -U pip setuptools wheel && \
+  pip3 install -U pip setuptools wheel cython && \
   mkdir -p /build && \
   if [ -z "${PACKAGES}" ]; then \
     PACKAGES=$(cat /packages.txt); \
