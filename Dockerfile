@@ -19,9 +19,8 @@ RUN \
       cargo \
       g++ \
       git \
-      libde265-dev \
       libffi-dev \
-      libheif-dev \
+      libglib2.0-dev \
       libjpeg-dev \
       libssl-dev \
       libwebp-dev \
@@ -39,10 +38,9 @@ RUN \
       g++ \
       gcc \
       git \
+      glib-dev \
       jpeg-dev \
-      libde265-dev \
       libffi-dev \
-      libheif-dev \
       libwebp-dev \
       libxml2-dev \
       libxslt-dev \
@@ -75,6 +73,7 @@ RUN \
       g++ \
       git \
       libffi-dev \
+      libglib2.0-dev \
       libjpeg-dev \
       libssl-dev \
       libxml2-dev \
