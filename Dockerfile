@@ -6,7 +6,14 @@ FROM ghcr.io/linuxserver/baseimage-${DISTRO}:${ARCH}-${DISTROVER} as builder
 
 ARG DISTRO
 ARG DISTROVER
+ARG ARCH
 ARG PACKAGES
+
+# grpcio build args
+ARG GRPC_BUILD_WITH_BORING_SSL_ASM=false
+ARG GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=true 
+ARG GRPC_PYTHON_BUILD_WITH_CYTHON=true 
+ARG GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY=true
 
 COPY packages.txt /packages.txt
 
@@ -63,7 +70,13 @@ RUN \
   else \
     INDEXDISTRO="${DISTRO}"; \
   fi && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v \
+  # ignore official arm32v7 wheel of grpcio
+  if [ "${DISTRO}" = "alpine" ] && [ "${ARCH}" = "arm32v7" ]; then \
+    GRPCIOSKIP="--no-binary grpcio"; \
+  else \
+    GRPCIOSKIP=""; \
+  fi && \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v ${GRPCIOSKIP} \
     ${PACKAGES} && \
   echo "**** Clean up ****" && \
   if [ -f /usr/bin/apt ]; then \

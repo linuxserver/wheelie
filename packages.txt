@@ -7,3 +7,4 @@ pandas
 Pillow
 PyNaCl
 PyYAML
+grpcio
