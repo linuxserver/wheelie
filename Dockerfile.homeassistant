@@ -7,6 +7,9 @@ ARG GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=true
 ARG GRPC_PYTHON_BUILD_WITH_CYTHON=true 
 ARG GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY=true
 
+# environment settings
+ENV PIPFLAGS="--no-cache-dir --use-deprecated=legacy-resolver --find-links https://wheel-index.linuxserver.io/alpine/ --find-links https://wheel-index.linuxserver.io/homeassistant/"
+
 # install packages
 RUN \
   echo "**** install build packages ****" && \
@@ -18,6 +21,7 @@ RUN \
     eudev-dev \
     ffmpeg-dev \
     gcc \
+    glib-dev \
     g++ \
     jq \
     libffi-dev \
@@ -63,15 +67,17 @@ RUN \
     | grep 'amd64: ' \
     | cut -d: -f3) && \
   echo "**** Updating pip and building wheels ****" && \
-  pip3 install -U pip==20.2 setuptools==57.5.0 wheel cython && \
+  pip3 install -U "pip>=21.0,<22.1" setuptools wheel cython && \
   mkdir -p /build && \
   cd /tmp/core && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
-    homeassistant==${HASS_RELEASE} && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
-    -r requirements_all.txt && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/alpine/" --find-links="https://wheel-index.linuxserver.io/homeassistant/" --no-cache-dir \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} \
     -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} \
+    -r requirements_all.txt && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} \
+    homeassistant==${HASS_RELEASE} && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} \
+    PySwitchbot && \
   echo "**** cleanup ****" && \
   apk del --purge \
     build-dependencies \
