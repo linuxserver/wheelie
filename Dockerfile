@@ -65,7 +65,7 @@ RUN \
   fi && \
   python3 -m venv /build-env && \
   . /build-env/bin/activate && \
-  pip3 install -U --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" pip setuptools wheel cython numpy && \
+  pip3 install -U pip setuptools wheel cython && \
   mkdir -p /build && \
   if [ -z "${PACKAGES}" ]; then \
     PACKAGES=$(cat /packages.txt); \
