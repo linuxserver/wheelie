@@ -58,17 +58,17 @@ RUN \
       zlib-dev; \
   fi && \
   echo "**** Updating pip and building wheels ****" && \
-  python3 -m venv /build-env && \
-  . /build-env/bin/activate && \
-  pip3 install -U pip setuptools wheel cython && \
-  mkdir -p /build && \
-  if [ -z "${PACKAGES}" ]; then \
-    PACKAGES=$(cat /packages.txt); \
-  fi && \
   if [ "${DISTROVER}" = "3.15" ]; then \
     INDEXDISTRO="alpine-3.15"; \
   else \
     INDEXDISTRO="${DISTRO}"; \
+  fi && \
+  python3 -m venv /build-env && \
+  . /build-env/bin/activate && \
+  pip3 install -U --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" pip setuptools wheel cython numpy && \
+  mkdir -p /build && \
+  if [ -z "${PACKAGES}" ]; then \
+    PACKAGES=$(cat /packages.txt); \
   fi && \
   # ignore official arm32v7 wheel of grpcio
   if [ "${DISTRO}" = "alpine" ] && [ "${ARCH}" = "arm32v7" ]; then \
