@@ -10,3 +10,4 @@ PyYAML
 grpcio
 bluepy
 PyWavelets
+wrapt
