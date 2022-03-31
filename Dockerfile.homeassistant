@@ -18,6 +18,7 @@ RUN \
     ca-certificates \
     cargo \
     cmake \
+    cups-dev \
     eudev-dev \
     ffmpeg-dev \
     gcc \
@@ -35,7 +36,10 @@ RUN \
     unzip && \
   echo "**** install runtime packages ****" && \
   apk add --no-cache --virtual=runtime-dependencies \
+    bluez \
     bluez-deprecated \
+    bluez-libs \
+    cups-libs \
     curl \
     eudev-libs \
     ffmpeg \
@@ -77,6 +81,7 @@ RUN \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     homeassistant==${HASS_RELEASE} && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
+    pycups \
     PySwitchbot && \
   echo "**** cleanup ****" && \
   apk del --purge \
