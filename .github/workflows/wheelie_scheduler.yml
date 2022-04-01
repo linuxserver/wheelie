@@ -30,6 +30,9 @@ jobs:
           done
           for PACKAGE in ${ALLPACKAGES}; do
             for DISTRO in ${DISTROS}; do
+              if echo "${PACKAGES}" | grep -q "${PACKAGE}"; then
+                break
+              fi
               IMAGE=$(echo ${DISTRO} | awk -F'-' '{print $1}')
               TAG=$(echo ${DISTRO} | awk -F'-' '{print $2}')
               if [ "${TAG}" == "3.15" ]; then
@@ -39,13 +42,15 @@ jobs:
               fi
               VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "pip install ${PACKAGE}== 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
               CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
-              if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}" "docs/${OS}/index.html"; then
-                echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
-                PACKAGES="${PACKAGE} ${PACKAGES}"
-                break
-              else
-                echo "**** ${PACKAGE}-${VERSION} wheel already built for ${DISTRO}, skipping ****"
-              fi
+              for ARCH in x86_64 armv7l armv8l aarch64; do
+                if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html"; then
+                  echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
+                  PACKAGES="${PACKAGE} ${PACKAGES}"
+                  break
+                else
+                  echo "**** ${PACKAGE}-${VERSION}-${CPYTHON}-${ARCH} wheel already built for ${DISTRO}, skipping ****"
+                fi
+              done
             done
           done
           if [ -n "$PACKAGES" ]; then
