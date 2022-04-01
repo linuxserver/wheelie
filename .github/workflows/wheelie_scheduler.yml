@@ -51,6 +51,9 @@ jobs:
                   echo "**** ${PACKAGE}-${VERSION}-${CPYTHON}-${ARCH} wheel already built for ${DISTRO}, skipping ****"
                 fi
               done
+              if echo "${PACKAGES}" | grep -q "${PACKAGE}"; then
+                break
+              fi
               for ARCH in armv7l armv8l; do
                 if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html"; then
                   echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
