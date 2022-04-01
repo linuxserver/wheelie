@@ -42,7 +42,16 @@ jobs:
               fi
               VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "pip install ${PACKAGE}== 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
               CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
-              for ARCH in x86_64 armv7l armv8l aarch64; do
+              for ARCH in x86_64 aarch64; do
+                if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -q "${PACKAGE}-${VERSION}.*manylinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -q "${PACKAGE}-${VERSION}.*musllinux.*${ARCH}.whl" "docs/${OS}/index.html"; then
+                  echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
+                  PACKAGES="${PACKAGE} ${PACKAGES}"
+                  break
+                else
+                  echo "**** ${PACKAGE}-${VERSION}-${CPYTHON}-${ARCH} wheel already built for ${DISTRO}, skipping ****"
+                fi
+              done
+              for ARCH in armv7l armv8l; do
                 if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html"; then
                   echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
                   PACKAGES="${PACKAGE} ${PACKAGES}"
