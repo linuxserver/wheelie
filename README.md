@@ -10,7 +10,7 @@ The wheels are downloaded from https://wheels.linuxserver.io
 Only 3 files are user configurable:
 - `packages.txt`: lists the packages for which the wheels are built.
 - `distros.txt`: lists the distros the wheels are built with.
-  - Should be in the format of either `ubuntu-focal` or `alpine-3.14` (only ubuntu and alpine versions are supported).
+  - Should be in the format of either `ubuntu-jammy` or `alpine-3.15` (only ubuntu and alpine versions are supported).
   - Should only be updated if cpython version changes. For instance, alpine 3.14 and 3.15 both use `cp39` so their wheels should be identical, thus no need to add `alpine-3.15` as a new distro.
 - `Jenkinsfile`: if `distros.txt` is updated, [the matrix in Jenkinsfile](https://github.com/linuxserver/wheelie/blob/b5b61bc94d129fe5671db9768fd63f998a08c90d/Jenkinsfile#L28) must also be updated to match it as Jenkins pipelines don't support dynamix matrices.
 
@@ -25,7 +25,7 @@ If adding a new package to `packages.txt` please make sure the Dockerfile has al
   - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.15 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.14 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=focal --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
-  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=bionic --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
+  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=jammy --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
 - The package name is case sensitive and should match the listing on pypi.org (ie. `PyYAML`).
 - If the build fails (or if it downloads a prebuilt wheel instead of building), you can add the necessary dependencies to the Dockerfile and/or change the arch, and test again (build cache should save some time).
 - Once confirmed, you can commit your changes to this repo and let the scheduler trigger in the next hourly.
