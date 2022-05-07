@@ -74,6 +74,12 @@ RUN \
   pip3 install -U "pip>=21.0,<22.1" setuptools wheel cython && \
   mkdir -p /build && \
   cd /tmp/core && \
+  NUMPY_VER=$(grep "numpy" requirements_all.txt) && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} \
+    "${NUMPY_VER}" && \
+  pip install /build/numpy*.whl && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} \
+    matplotlib && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
