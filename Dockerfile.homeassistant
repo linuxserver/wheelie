@@ -79,8 +79,6 @@ RUN \
     "${NUMPY_VER}" && \
   pip install /build/numpy*.whl && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
-    matplotlib && \
-  pip wheel --wheel-dir=/build ${PIPFLAGS} \
     -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     -r requirements_all.txt && \
