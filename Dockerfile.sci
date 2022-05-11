@@ -26,7 +26,7 @@ RUN \
     python3-dev \
     python3-pip \
     python3-venv && \
-  apt-get clean &&
+  apt-get clean && \
   rm -rf \
     /tmp/* \
     /var/lib/apt/lists/* \
