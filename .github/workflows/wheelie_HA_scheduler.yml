@@ -30,7 +30,7 @@ jobs:
           CURRENT_HASH=$(grep -hs ^ HA-reqs/* | md5sum | cut -c1-8)
           NEW_HASH=$(grep -hs ^ upstream/* | md5sum | cut -c1-8)
           if [ ${CURRENT_HASH} != ${NEW_HASH} ]; then
-            if [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelie/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieHA/lastBuild/api/json | jq -r '.building') == "false" ]; then
+            if [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelie/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieHA/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieSCI/lastBuild/api/json | jq -r '.building') == "false" ]; then
               echo "**** Triggering wheelie for HomeAssistant ****"
               response=$(curl -iX POST \
                 https://ci.linuxserver.io/job/Tools/job/wheelieHA/build \

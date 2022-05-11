@@ -1,0 +1,180 @@
+pipeline {
+  agent {
+    label 'X86-64-MULTI'
+  }
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '10', daysToKeepStr: '60'))
+    parallelsAlwaysFailFast()
+  }
+  // Configuration for the variables used for this specific repo
+  environment {
+    BUILDS_DISCORD=credentials('build_webhook_url')
+    GITHUB_TOKEN=credentials('498b4638-2d02-4ce5-832d-8a57d01d97ab')
+  }
+  stages {
+    stage('Build-Multi') {
+      matrix {
+        axes {
+          axis {
+            name 'MATRIXARCH'
+            values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-NATIVE'
+          }
+          axis {
+            name 'MATRIXDISTRO'
+            values 'focal', 'jammy'
+          }
+        }
+        stages {
+          stage('axis') {
+            agent none
+            steps {
+              script {
+                stage("${MATRIXDISTRO} on ${MATRIXARCH}") {
+                  print "${MATRIXDISTRO} on ${MATRIXARCH}"
+                }
+              }
+            }
+          }
+          stage ('Build') {
+            agent {
+              label "${MATRIXARCH}"
+            }
+            steps {
+              echo "Running on node: ${NODE_NAME}"
+              echo 'Logging into Github'
+              sh '''#! /bin/bash
+                    echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
+                 '''
+              echo 'Building wheels'
+              sh '''#! /bin/bash
+                    if [ "${MATRIXARCH}" == "X86-64-MULTI" ]; then
+                      ARCH="amd64"
+                    elif [ "${MATRIXARCH}" == "ARM64" ]; then
+                      ARCH="arm64v8"
+                    else
+                      ARCH="arm32v7"
+                    fi
+                    docker build \
+                      --no-cache --pull -t ghcr.io/linuxserver/wheelie:sci-${ARCH}-${MATRIXDISTRO} \
+                      --build-arg DISTRO=${MATRIXDISTRO} \
+                      --build-arg ARCH=${ARCH} \
+                      -f Dockerfile.sci .
+                 '''
+              echo 'Pushing images to ghcr'
+              retry(5) {
+                    sh '''#! /bin/bash
+                          if [ "${MATRIXARCH}" == "X86-64-MULTI" ]; then
+                            ARCH="amd64"
+                          elif [ "${MATRIXARCH}" == "ARM64" ]; then
+                            ARCH="arm64v8"
+                          else
+                            ARCH="arm32v7"
+                          fi
+                          docker push ghcr.io/linuxserver/wheelie:sci-${ARCH}-${MATRIXDISTRO}
+                          docker rmi \
+                            ghcr.io/linuxserver/wheelie:sci-${ARCH}-${MATRIXDISTRO} || :
+                       '''
+              }
+            }
+          }
+        }
+      }
+    }
+    stage ('Push artifacts') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'ci-tests-s3-key-id', variable: 'S3_KEY'),
+          string(credentialsId: 'ci-tests-s3-secret-access-key	', variable: 'S3_SECRET') 
+          ]) {
+          sh '''#! /bin/bash
+                set -e
+                echo "Retrieving wheels"
+                mkdir -p build-ubuntu
+                for distro in focal jammy; do
+                  for arch in amd64 arm64v8 arm32v7; do
+                    echo "**** Retrieving wheels for ${arch}-${distro} ****"
+                    docker pull ghcr.io/linuxserver/wheelie:sci-${arch}-${distro}
+                    docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:sci-${arch}-${distro} blah
+                    docker cp ${arch}-${distro}:/build/. build-ubuntu/
+                    docker rm ${arch}-${distro}
+                    docker rmi ghcr.io/linuxserver/wheelie:sci-${arch}-${distro}
+                  done
+                done
+             '''
+          script {
+            env.TEMPDIR = sh(
+              script: '''mktemp -d ''',
+              returnStdout: true).trim()
+          }
+          sh '''#! /bin/bash
+                set -e
+                echo "Cloning repo and preparing s3cmd"
+                git clone https://github.com/linuxserver/wheelie.git ${TEMPDIR}/wheelie
+                docker run -d --rm \
+                  --name s3cmd \
+                  -v ${PWD}/build-ubuntu:/build-ubuntu \
+                  -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
+                  -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
+                  ghcr.io/linuxserver/baseimage-alpine:3.14
+                docker exec s3cmd /bin/bash -c 'apk add --no-cache py3-pip && pip install s3cmd'
+             '''
+          sh '''#! /bin/bash
+                set -e
+                echo "pushing wheels as necessary"
+                os="ubuntu"
+                for wheel in $(ls build-${os}/); do
+                  if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
+                    echo "**** ${wheel} for ${os} is being uploaded to aws ****"
+                    UPLOADED="${UPLOADED}\\n${wheel}" 
+                    docker exec s3cmd s3cmd put --acl-public "/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
+                    sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\\n    <br />\\n\\n</body>|" "${TEMPDIR}/wheelie/docs/${os}/index.html"
+                  else
+                    echo "**** ${wheel} for ${os} already processed, skipping ****"
+                  fi
+                done
+                if [ -n "${UPLOADED}" ]; then
+                  echo -e "**** Uploaded wheels are: **** ${UPLOADED}"
+                else
+                  echo "No wheels were uploaded"
+                fi
+                echo "Stopping s3cmd and removing temp files"
+                docker stop s3cmd
+                rm -rf build-ubuntu
+             '''
+          sh '''#! /bin/bash
+                set -e
+                echo "updating git repo as necessary"
+                cd ${TEMPDIR}/wheelie
+                git add . || :
+                git commit -m '[bot] Updating indices' || :
+                git push https://LinuxServer-CI:${GITHUB_TOKEN}@github.com/linuxserver/wheelie.git --all || :
+             '''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script{
+        sh '''#! /bin/bash
+              echo "Final clean up, remove s3cmd if still exists"
+              docker stop s3cmd || :
+              rm -rf ${TEMPDIR}/wheelie
+           '''
+        if (currentBuild.currentResult == "SUCCESS"){
+          sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 1681177,\
+                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  Success\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** scipy and scikit-learn\\n"}],\
+                 "username": "Jenkins"}' ${BUILDS_DISCORD} '''
+        }
+        else {
+          sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 16711680,\
+                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  failure\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** scipy and scikit-learn\\n"}],\
+                 "username": "Jenkins"}' ${BUILDS_DISCORD} '''
+        }
+      }
+    }
+    cleanup {
+      cleanWs()
+    }
+  }
+}

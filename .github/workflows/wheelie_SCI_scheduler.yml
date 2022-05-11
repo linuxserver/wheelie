@@ -1,8 +1,8 @@
-name: Wheelie Scheduler
+name: Wheelie_SCI Scheduler
 
 on:
   schedule:
-    - cron:  '00 * * * *'
+    - cron:  '40 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -14,8 +14,8 @@ jobs:
 
       - name: Check for updates and trigger
         run: |
-          ALLPACKAGES=$(cat packages.txt)
-          DISTROS=$(cat distros.txt)
+          ALLPACKAGES="scipy scikit-learn"
+          DISTROS="ubuntu-focal ubuntu-jammy"
           for DISTRO in ${DISTROS}; do
             IMAGE=$(echo ${DISTRO} | awk -F'-' '{print $1}')
             TAG=$(echo ${DISTRO} | awk -F'-' '{print $2}')
@@ -54,7 +54,7 @@ jobs:
               if echo "${PACKAGES}" | grep -q "${PACKAGE}"; then
                 break
               fi
-              for ARCH in armv7l armv8l; do
+              for ARCH in armv7l; do
                 if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html"; then
                   echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
                   PACKAGES="${PACKAGE} ${PACKAGES}"
@@ -68,8 +68,8 @@ jobs:
           if [ -n "$PACKAGES" ]; then
             if [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelie/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieHA/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieSCI/lastBuild/api/json | jq -r '.building') == "false" ]; then
               echo "**** Triggering wheelie for packages: ${PACKAGES}****"
-              response=$(curl -iX POST --data-urlencode "PACKAGES=${PACKAGES}" \
-                https://ci.linuxserver.io/job/Tools/job/wheelie/buildWithParameters \
+              response=$(curl -iX POST \
+                https://ci.linuxserver.io/job/Tools/job/wheelieSCI/buildWithParameters \
                 --user ${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }} | grep -i location | sed "s|^[L|l]ocation: \(.*\)|\1|")
               echo "**** Jenkins job queue url: ${response%$'\r'} ****"
               echo "**** Sleeping 10 seconds until job starts ****"
@@ -84,7 +84,7 @@ jobs:
                 --data-urlencode "description=GHA external trigger https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
                 --data-urlencode "Submit=Submit"
               echo "**** Notifying discord ****"
-              TRIGGER_REASON="Triggering wheelie for packages: ${PACKAGES}"
+              TRIGGER_REASON="Triggering wheelieSCI for packages: ${PACKAGES}"
               curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://cdn.discordapp.com/avatars/354986384542662657/df91181b3f1cf0ef1592fbe18e0962d7.png","embeds": [{"color": 9802903,
                 "description": "**Build Triggered** \n**Reason:** '"${TRIGGER_REASON}"' \n**Build URL:** '"${buildurl}display/redirect"' \n"}],
                 "username": "Github Actions"}' ${{ secrets.DISCORD_WEBHOOK }}
