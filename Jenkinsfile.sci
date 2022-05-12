@@ -6,6 +6,10 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '10', daysToKeepStr: '60'))
     parallelsAlwaysFailFast()
   }
+  // Input to determine which packages to build
+  parameters {
+     string(defaultValue: '', description: 'Package list', name: 'PACKAGES')
+  }
   // Configuration for the variables used for this specific repo
   environment {
     BUILDS_DISCORD=credentials('build_webhook_url')
@@ -58,6 +62,7 @@ pipeline {
                       --no-cache --pull -t ghcr.io/linuxserver/wheelie:sci-${ARCH}-${MATRIXDISTRO} \
                       --build-arg DISTRO=${MATRIXDISTRO} \
                       --build-arg ARCH=${ARCH} \
+                      --build-arg PACKAGES=\"${PACKAGES}\" \
                       -f Dockerfile.sci .
                  '''
               echo 'Pushing images to ghcr'
@@ -163,12 +168,12 @@ pipeline {
            '''
         if (currentBuild.currentResult == "SUCCESS"){
           sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 1681177,\
-                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  Success\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** scipy and scikit-learn\\n"}],\
+                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  Success\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** '"${PACKAGES}"'\\n"}],\
                  "username": "Jenkins"}' ${BUILDS_DISCORD} '''
         }
         else {
           sh ''' curl -X POST -H "Content-Type: application/json" --data '{"avatar_url": "https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png","embeds": [{"color": 16711680,\
-                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  failure\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** scipy and scikit-learn\\n"}],\
+                 "description": "**Wheelie Build:**  '${BUILD_NUMBER}'\\n**Status:**  failure\\n**Job:** '${RUN_DISPLAY_URL}'\\n**Packages:** '"${PACKAGES}"'\\n"}],\
                  "username": "Jenkins"}' ${BUILDS_DISCORD} '''
         }
       }

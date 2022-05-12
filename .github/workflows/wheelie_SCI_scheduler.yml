@@ -69,8 +69,8 @@ jobs:
           if [ -n "$PACKAGES" ]; then
             if [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelie/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieHA/lastBuild/api/json | jq -r '.building') == "false" ] && [ $(curl -s https://ci.linuxserver.io/job/Tools/job/wheelieSCI/lastBuild/api/json | jq -r '.building') == "false" ]; then
               echo "**** Triggering wheelie for packages: ${PACKAGES}****"
-              response=$(curl -iX POST \
-                https://ci.linuxserver.io/job/Tools/job/wheelieSCI/build \
+              response=$(curl -iX POST --data-urlencode "PACKAGES=${PACKAGES}" \
+                https://ci.linuxserver.io/job/Tools/job/wheelieSCI/buildWithParameters \
                 --user ${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }} | grep -i location | sed "s|^[L|l]ocation: \(.*\)|\1|")
               echo "**** Jenkins job queue url: ${response%$'\r'} ****"
               echo "**** Sleeping 10 seconds until job starts ****"
