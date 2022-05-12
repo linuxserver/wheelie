@@ -14,7 +14,7 @@ jobs:
 
       - name: Check for updates and trigger
         run: |
-          ALLPACKAGES="scipy scikit-learn"
+          ALLPACKAGES="scipy scikit-learn pikepdf"
           DISTROS="ubuntu-focal ubuntu-jammy"
           for DISTRO in ${DISTROS}; do
             IMAGE=$(echo ${DISTRO} | awk -F'-' '{print $1}')
