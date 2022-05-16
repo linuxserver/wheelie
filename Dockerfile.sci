@@ -35,6 +35,8 @@ RUN \
     ./configure; \
     make; \
     make install; \
+    mkdir -p /build; \
+    find /usr -name libqpdf.so* -exec tar -rvzPf "/build/libqpdf-${DISTRO}-${ARCH}.tar.gz" {} +; \
   fi && \
   python3 -m venv /build-env && \
   . /build-env/bin/activate && \

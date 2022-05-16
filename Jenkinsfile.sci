@@ -142,6 +142,12 @@ pipeline {
                 else
                   echo "No wheels were uploaded"
                 fi
+                for so in /build-ubuntu/libqpdf-*.tar.gz; do
+                  if [ -f "${so}" ]; then
+                    echo "Uploading ${so}"
+                    docker exec s3cmd s3cmd put --acl-public "/build-${os}/${so}" "s3://wheels.linuxserver.io/${os}/${so}"
+                  fi
+                done
                 echo "Stopping s3cmd and removing temp files"
                 docker stop s3cmd
                 rm -rf build-ubuntu
