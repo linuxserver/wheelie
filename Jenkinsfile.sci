@@ -127,7 +127,7 @@ pipeline {
                 set -e
                 echo "pushing wheels as necessary"
                 os="ubuntu"
-                for wheel in $(ls build-${os}/); do
+                for wheel in $(ls build-${os}/*.whl); do
                   if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
                     echo "**** ${wheel} for ${os} is being uploaded to aws ****"
                     UPLOADED="${UPLOADED}\\n${wheel}" 
@@ -142,10 +142,10 @@ pipeline {
                 else
                   echo "No wheels were uploaded"
                 fi
-                for so in /build-ubuntu/libqpdf-*.tar; do
+                for so in build-ubuntu/libqpdf-*.tar; do
                   if [ -f "${so}" ]; then
-                    echo "Uploading ${so}"
-                    docker exec s3cmd s3cmd put --acl-public "/build-${os}/${so}" "s3://wheels.linuxserver.io/${os}/${so}"
+                    echo "Uploading $(basename ${so})"
+                    docker exec s3cmd s3cmd put --acl-public "/build-${os}/$(basename ${so})" "s3://wheels.linuxserver.io/${os}/$(basename ${so})"
                   fi
                 done
                 echo "Stopping s3cmd and removing temp files"
