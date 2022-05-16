@@ -127,8 +127,8 @@ pipeline {
                 set -e
                 echo "pushing wheels as necessary"
                 os="ubuntu"
-                for wheel in $(ls build-${os}/*.whl); do
-                  if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
+                for wheel in $(ls build-${os}/); do
+                  if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && echo "${wheel}" | grep -q ".whl" && ! echo "${wheel}" | grep -q "none-any"; then
                     echo "**** ${wheel} for ${os} is being uploaded to aws ****"
                     UPLOADED="${UPLOADED}\\n${wheel}" 
                     docker exec s3cmd s3cmd put --acl-public "/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
