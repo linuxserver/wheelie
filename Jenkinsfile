@@ -25,7 +25,7 @@ pipeline {
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.14', 'alpine-3.15'
+            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.14', 'alpine-3.15', 'alpine-3.16'
           }
         }
         stages {
@@ -112,7 +112,7 @@ pipeline {
           sh '''#! /bin/bash
                 set -e
                 echo "Retrieving wheels"
-                mkdir -p build-alpine build-alpine-3.15 build-ubuntu
+                mkdir -p build-alpine build-alpine-3.15 build-alpine-3.16 build-ubuntu
                 for distro in $(cat distros.txt); do
                   for arch in amd64 arm32v8 arm64v8 arm32v7; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
@@ -122,6 +122,8 @@ pipeline {
                       docker cp ${arch}-${distro}:/build/. build-alpine/
                     elif echo "${distro}" | grep "alpine" | grep -q "3.15"; then
                       docker cp ${arch}-${distro}:/build/. build-alpine-3.15/
+                    elif echo "${distro}" | grep "alpine" | grep -q "3.16"; then
+                      docker cp ${arch}-${distro}:/build/. build-alpine-3.16/
                     else
                       docker cp ${arch}-${distro}:/build/. build-ubuntu/
                     fi
@@ -144,6 +146,7 @@ pipeline {
                   -v ${PWD}/build-ubuntu:/build-ubuntu \
                   -v ${PWD}/build-alpine:/build-alpine \
                   -v ${PWD}/build-alpine-3.15:/build-alpine-3.15 \
+                  -v ${PWD}/build-alpine-3.16:/build-alpine-3.16 \
                   -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
                   -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
                   ghcr.io/linuxserver/baseimage-alpine:3.14
@@ -152,7 +155,7 @@ pipeline {
           sh '''#! /bin/bash
                 set -e
                 echo "pushing wheels as necessary"
-                for os in ubuntu alpine alpine-3.15; do
+                for os in ubuntu alpine alpine-3.15 alpine-3.16; do
                   for wheel in $(ls build-${os}/); do
                     if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
                       echo "**** ${wheel} for ${os} is being uploaded to aws ****"
@@ -171,7 +174,7 @@ pipeline {
                 fi
                 echo "Stopping s3cmd and removing temp files"
                 docker stop s3cmd
-                rm -rf build-ubuntu build-alpine build-alpine-3.15
+                rm -rf build-ubuntu build-alpine build-alpine-3.15 build-alpine-3.16
              '''
           sh '''#! /bin/bash
                 set -e
