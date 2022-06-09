@@ -37,6 +37,8 @@ jobs:
               TAG=$(echo ${DISTRO} | awk -F'-' '{print $2}')
               if [ "${TAG}" == "3.15" ]; then
                 OS="alpine-3.15"
+              elif [ "${TAG}" == "3.16" ]; then
+                OS="alpine-3.16"
               else
                 OS="${IMAGE}"
               fi
