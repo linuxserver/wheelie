@@ -42,7 +42,8 @@ RUN \
   . /build-env/bin/activate && \
   pip3 install -U pip setuptools wheel cython && \
   mkdir -p /build && \
-  pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v \
+  PIKEPDF_VERSION=$(curl -sL "https://pypi.python.org/pypi/pikepdf/json" |jq -r '. | .info.version') && \
+  env SETUPTOOLS_SCM_PRETEND_VERSION="${PIKEPDF_VERSION}" pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v \
     ${PACKAGES} && \
   echo "**** Clean up ****" && \
   apt-get purge --auto-remove -y \
