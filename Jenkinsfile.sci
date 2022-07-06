@@ -146,6 +146,12 @@ pipeline {
                   if [ -f "${so}" ]; then
                     echo "Uploading $(basename ${so})"
                     docker exec s3cmd s3cmd put --acl-public "/build-${os}/$(basename ${so})" "s3://wheels.linuxserver.io/${os}/$(basename ${so})"
+                    export GENERICTARNAME=$(basename ${so} | sed 's|-[0-9\.]*||')
+                    if grep -q "${GENERICTARNAME}" "${TEMPDIR}/wheelie/docs/ubuntu/index.html"; then
+                      sed -i "s|'.*'>${GENERICTARNAME}</a>|'https://wheels.linuxserver.io/ubuntu/$(basename ${so})'>${GENERICTARNAME}</a>|" "${TEMPDIR}/wheelie/docs/ubuntu/index.html"
+                    else
+                      sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/ubuntu/$(basename ${so})'>${GENERICTARNAME}</a>\\n    <br />\\n\\n</body>|" "${TEMPDIR}/wheelie/docs/ubuntu/index.html"
+                    fi
                   fi
                 done
                 echo "Stopping s3cmd and removing temp files"
