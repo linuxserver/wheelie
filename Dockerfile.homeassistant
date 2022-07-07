@@ -1,6 +1,6 @@
 ARG ARCH=amd64
 
-FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.14
+FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.16
 
 ARG GRPC_BUILD_WITH_BORING_SSL_ASM=false
 ARG GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=true 
@@ -8,7 +8,7 @@ ARG GRPC_PYTHON_BUILD_WITH_CYTHON=true
 ARG GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY=true
 
 # environment settings
-ENV PIPFLAGS="--no-cache-dir --use-deprecated=legacy-resolver --find-links https://wheel-index.linuxserver.io/alpine/ --find-links https://wheel-index.linuxserver.io/homeassistant/"
+ENV PIPFLAGS="--no-cache-dir --use-deprecated=legacy-resolver --find-links https://wheel-index.linuxserver.io/alpine-3.16/ --find-links https://wheel-index.linuxserver.io/homeassistant-3.16/"
 
 # install packages
 RUN \
