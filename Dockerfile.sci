@@ -20,10 +20,20 @@ RUN \
     python3-pip \
     python3-venv \
     zlib1g-dev && \
-  if echo "${PACKAGES}" | grep -q pikepdf && [ "${ARCH}" != "amd64" ]; then \
-    echo "**** install qpdf on armhf and aarch64 ****"; \
+  if echo "${PACKAGES}" | grep -q pikepdf && [ "${ARCH}" = "arm32v7" ]; then \
+    echo "**** install qpdf on armhf ****"; \
     QPDF_VERSION=$(curl -sX GET "https://api.github.com/repos/qpdf/qpdf/releases/latest" \
       | jq -r '.tag_name' | sed 's|release-qpdf-||'); \
+    mkdir -p /tmp/qpdf; \
+    curl -o \
+      /tmp/qpdf.tar.gz -L \
+      "https://github.com/qpdf/qpdf/releases/download/release-qpdf-${QPDF_VERSION}/qpdf-${QPDF_VERSION}.tar.gz"; \
+    tar xf \
+      /tmp/qpdf.tar.gz -C \
+      /tmp/qpdf --strip-components=1; \
+    cd /tmp/qpdf; \
+    mkdir -p /usr/local/include/qpdf; \
+    cp -a /tmp/qpdf/include/qpdf/* /usr/local/include/qpdf/; \
     if curl -fso \
       /tmp/libqpdf.tar -L \
       "https://wheels.linuxserver.io/ubuntu/libqpdf-${QPDF_VERSION}-${DISTRO}-${ARCH}.tar"; then \
@@ -32,14 +42,6 @@ RUN \
           /tmp/libqpdf.tar; \
     else \
       echo "**** Did not find libqpdf so version ${QPDF_VERSION}; building from source. ****"; \
-      mkdir -p /tmp/qpdf; \
-      curl -o \
-        /tmp/qpdf.tar.gz -L \
-        "https://github.com/qpdf/qpdf/releases/download/release-qpdf-${QPDF_VERSION}/qpdf-${QPDF_VERSION}.tar.gz"; \
-      tar xf \
-        /tmp/qpdf.tar.gz -C \
-        /tmp/qpdf --strip-components=1; \
-      cd /tmp/qpdf; \
       ./configure; \
       make; \
       make install; \
