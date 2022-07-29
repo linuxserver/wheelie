@@ -12,10 +12,13 @@ RUN \
   apt-get update && \
   apt-get install --no-install-recommends -y \
     build-essential \
+    cmake \
+    dh-autoreconf \
     gfortran \
     jq \
-    libatlas-base-dev \
+    libopenblas-dev \
     libjpeg-dev \
+    pkg-config \
     python3-dev \
     python3-pip \
     python3-venv \
@@ -54,15 +57,20 @@ RUN \
   pip3 install -U pip setuptools wheel cython && \
   mkdir -p /build && \
   PIKEPDF_VERSION=$(curl -sL "https://pypi.python.org/pypi/pikepdf/json" |jq -r '. | .info.version') && \
+  pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v ninja patchelf && \
+  pip install /build/ninja-* /build/patchelf-* && \
   env SETUPTOOLS_SCM_PRETEND_VERSION="${PIKEPDF_VERSION}" pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v \
     ${PACKAGES} && \
   echo "**** Clean up ****" && \
   apt-get purge --auto-remove -y \
     build-essential \
+    cmake \
+    dh-autoreconf \
     gfortran \
     jq \
-    libatlas-base-dev \
+    libopenblas-dev \
     libjpeg-dev \
+    pkg-config \
     python3-dev \
     python3-pip \
     python3-venv \
