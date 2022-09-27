@@ -24,6 +24,7 @@ RUN \
     apt-get update && \
     apt-get install --no-install-recommends -y \
       cargo \
+      cmake \
       g++ \
       git \
       libffi-dev \
@@ -42,6 +43,7 @@ RUN \
     echo "**** Detected Alpine ****" && \
     apk add --no-cache --virtual=build-dependencies \
       cargo \
+      cmake \
       g++ \
       gcc \
       git \
@@ -85,6 +87,7 @@ RUN \
     echo "**** Detected Ubuntu ****" && \
     apt-get purge --auto-remove -y \
       cargo \
+      cmake \
       g++ \
       git \
       libffi-dev \
