@@ -11,3 +11,4 @@ grpcio
 bluepy
 PyWavelets
 wrapt
+ninja

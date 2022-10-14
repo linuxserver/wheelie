@@ -80,6 +80,9 @@ RUN \
   else \
     GRPCIOSKIP=""; \
   fi && \
+  if echo "${PACKAGES}" | grep -q cmake; then \
+    pip install --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v ninja; \
+  fi && \
   pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v ${GRPCIOSKIP} \
     ${PACKAGES} && \
   echo "**** Clean up ****" && \
