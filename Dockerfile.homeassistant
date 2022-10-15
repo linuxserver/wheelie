@@ -78,6 +78,9 @@ RUN \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     "${NUMPY_VER}" && \
   pip install /build/numpy*.whl && \
+  if [ "${ARCH}" = "arm32v7" ]; then \
+    pip install ${PIPFLAGS} --only-binary cmake cmake; \
+  fi && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
@@ -85,8 +88,7 @@ RUN \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     homeassistant==${HASS_RELEASE} && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
-    pycups \
-    PySwitchbot && \
+    pycups && \
   echo "**** cleanup ****" && \
   apk del --purge \
     build-dependencies \
