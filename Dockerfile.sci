@@ -60,16 +60,8 @@ RUN \
   PIKEPDF_VERSION=$(curl -sL "https://pypi.python.org/pypi/pikepdf/json" |jq -r '. | .info.version') && \
   pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v ninja patchelf && \
   pip install /build/ninja-* /build/patchelf-* && \
-  if [ "${DISTRO}" = "focal" ] && [ "${ARCH}" = "arm32v7" ]; then \
-    git clone https://github.com/scipy/scipy.git --recursive && \
-    cd scipy && \
-    git checkout v1.9.1 && \
-    sed -i 's|meson==0\.62\.2|meson==0\.63\.2|' pyproject.toml && \
-    env SETUPTOOLS_SCM_PRETEND_VERSION="${PIKEPDF_VERSION}" pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v . ; \
-  else \
-    env SETUPTOOLS_SCM_PRETEND_VERSION="${PIKEPDF_VERSION}" pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v \
-      ${PACKAGES} ; \
-  fi && \
+  env SETUPTOOLS_SCM_PRETEND_VERSION="${PIKEPDF_VERSION}" pip wheel --wheel-dir=/build -f https://wheel-index.linuxserver.io/ubuntu/ -v \
+    ${PACKAGES} && \
   echo "**** Clean up ****" && \
   apt-get purge --auto-remove -y \
     build-essential \
