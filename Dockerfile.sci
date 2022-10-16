@@ -47,8 +47,8 @@ RUN \
     else \
       echo "**** Did not find libqpdf so version ${QPDF_VERSION}; building from source. ****"; \
       cmake -S . -B build; \
-      cmake --build build; \
-      cmake --install build --component lib; \
+      cmake --build build --parallel; \
+      cmake --install build; \
       mkdir -p /build; \
       find /usr -name libqpdf.so* -exec tar -rvPf "/build/libqpdf-${QPDF_VERSION}-${DISTRO}-${ARCH}.tar" {} +; \
     fi; \
