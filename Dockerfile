@@ -60,10 +60,8 @@ RUN \
       zlib-dev; \
   fi && \
   echo "**** Updating pip and building wheels ****" && \
-  if [ "${DISTROVER}" = "3.15" ]; then \
-    INDEXDISTRO="alpine-3.15"; \
-  elif [ "${DISTROVER}" = "3.16" ]; then \
-    INDEXDISTRO="alpine-3.16"; \
+  if [ "${DISTRO}" = "alpine" ]; then \
+    INDEXDISTRO="${DISTRO}-${DISTROVER}"; \
   else \
     INDEXDISTRO="${DISTRO}"; \
   fi && \

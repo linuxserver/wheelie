@@ -25,7 +25,7 @@ pipeline {
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.14', 'alpine-3.15', 'alpine-3.16'
+            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.15', 'alpine-3.16'
           }
         }
         stages {
@@ -112,20 +112,20 @@ pipeline {
           sh '''#! /bin/bash
                 set -e
                 echo "Retrieving wheels"
-                mkdir -p build-alpine build-alpine-3.15 build-alpine-3.16 build-ubuntu
                 for distro in $(cat distros.txt); do
+                  if echo "${distro}" | grep ubuntu; then
+                    mkdir -p builds/build-ubuntu
+                  else
+                    mkdir -p builds/build-${distro}
+                  fi
                   for arch in amd64 arm32v8 arm64v8 arm32v7; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
                     docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
-                    if echo "${distro}" | grep "alpine" | grep -q "3.14"; then
-                      docker cp ${arch}-${distro}:/build/. build-alpine/
-                    elif echo "${distro}" | grep "alpine" | grep -q "3.15"; then
-                      docker cp ${arch}-${distro}:/build/. build-alpine-3.15/
-                    elif echo "${distro}" | grep "alpine" | grep -q "3.16"; then
-                      docker cp ${arch}-${distro}:/build/. build-alpine-3.16/
+                    if echo ${distro} | grep alpine; then
+                      docker cp ${arch}-${distro}:/build/. builds/build-${distro}/
                     else
-                      docker cp ${arch}-${distro}:/build/. build-ubuntu/
+                      docker cp ${arch}-${distro}:/build/. builds/build-ubuntu/
                     fi
                     docker rm ${arch}-${distro}
                     docker rmi ghcr.io/linuxserver/wheelie:${arch}-${distro}
@@ -143,24 +143,22 @@ pipeline {
                 git clone https://github.com/linuxserver/wheelie.git ${TEMPDIR}/wheelie
                 docker run -d --rm \
                   --name s3cmd \
-                  -v ${PWD}/build-ubuntu:/build-ubuntu \
-                  -v ${PWD}/build-alpine:/build-alpine \
-                  -v ${PWD}/build-alpine-3.15:/build-alpine-3.15 \
-                  -v ${PWD}/build-alpine-3.16:/build-alpine-3.16 \
+                  -v ${PWD}/builds:/builds \
                   -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
                   -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
-                  ghcr.io/linuxserver/baseimage-alpine:3.14
+                  ghcr.io/linuxserver/baseimage-alpine:3.16
                 docker exec s3cmd /bin/bash -c 'apk add --no-cache py3-pip && pip install s3cmd'
              '''
           sh '''#! /bin/bash
                 set -e
                 echo "pushing wheels as necessary"
-                for os in ubuntu alpine alpine-3.15 alpine-3.16; do
+                cd builds
+                for os in ubuntu $(cat ../distros.txt | grep alpine); do
                   for wheel in $(ls build-${os}/); do
                     if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
                       echo "**** ${wheel} for ${os} is being uploaded to aws ****"
                       UPLOADED="${UPLOADED}\\n${wheel}" 
-                      docker exec s3cmd s3cmd put --acl-public "/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
+                      docker exec s3cmd s3cmd put --acl-public "/builds/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
                       sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\\n    <br />\\n\\n</body>|" "${TEMPDIR}/wheelie/docs/${os}/index.html"
                     else
                       echo "**** ${wheel} for ${os} already processed, skipping ****"
@@ -174,7 +172,8 @@ pipeline {
                 fi
                 echo "Stopping s3cmd and removing temp files"
                 docker stop s3cmd
-                rm -rf build-ubuntu build-alpine build-alpine-3.15 build-alpine-3.16
+                cd ..
+                rm -rf builds
              '''
           sh '''#! /bin/bash
                 set -e

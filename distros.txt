@@ -1,5 +1,4 @@
 ubuntu-focal
 ubuntu-jammy
-alpine-3.14
 alpine-3.15
 alpine-3.16
