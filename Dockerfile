@@ -78,7 +78,12 @@ RUN \
   else \
     GRPCIOSKIP=""; \
   fi && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v ${GRPCIOSKIP} \
+  if [ "${ARCH}" = "arm32v7" ]; then \
+    WRAPTNATIVE="--no-binary wrapt"; \
+  else \
+    WRAPTNATIVE=""; \
+  fi && \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v ${GRPCIOSKIP} ${WRAPTNATIVE} \
     ${PACKAGES} && \
   echo "**** Clean up ****" && \
   if [ -f /usr/bin/apt ]; then \
