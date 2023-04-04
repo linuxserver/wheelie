@@ -47,7 +47,7 @@ pipeline {
         }
         stage('Build arm32v7') {
           agent {
-            label 'ARMHF-WHEELIE-NATIVE'
+            label 'ARMHF-WHEELIE-CHROOT'
           }
           steps {
             echo "Running on node: ${NODE_NAME}"
