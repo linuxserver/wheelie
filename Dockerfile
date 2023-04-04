@@ -117,7 +117,7 @@ RUN \
     ${HOME}/.cargo \
     ${HOME}/.cache && \
   echo "**** Renaming wheels if necessary ****" && \
-  /bin/bash -c 'for i in $(ls /build/*armv8l*.whl 2>/dev/null); do echo "processing ${i}" && mv -- "$i" "${i//armv8l/armv7l}"; done' && \
+  /bin/bash -c 'for i in $(ls /build/*armv8l*.whl 2>/dev/null); do echo "processing ${i}" && cp -- "$i" "${i//armv8l/armv7l}"; done' && \
   echo "**** Wheels built are: ****" && \
   ls /build
 

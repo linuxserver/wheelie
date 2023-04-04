@@ -100,4 +100,8 @@ RUN \
     /var/lib/apt/lists/* \
     /var/tmp/* \
     ${HOME}/.cargo \
-    ${HOME}/.cache
+    ${HOME}/.cache && \
+  echo "**** Renaming wheels if necessary ****" && \
+  /bin/bash -c 'for i in $(ls /build/*armv7l*.whl 2>/dev/null); do echo "processing ${i}" && cp -- "$i" "${i//armv7l/armv8l}"; done' && \
+  echo "**** Wheels built are: ****" && \
+  ls /build

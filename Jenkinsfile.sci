@@ -21,7 +21,7 @@ pipeline {
         axes {
           axis {
             name 'MATRIXARCH'
-            values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-NATIVE'
+            values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-CHROOT'
           }
           axis {
             name 'MATRIXDISTRO'
@@ -53,13 +53,17 @@ pipeline {
               sh '''#! /bin/bash
                     if [ "${MATRIXARCH}" == "X86-64-MULTI" ]; then
                       ARCH="amd64"
+                      PLATFORM="linux/amd64"
                     elif [ "${MATRIXARCH}" == "ARM64" ]; then
                       ARCH="arm64v8"
+                      PLATFORM="linux/arm64"
                     else
                       ARCH="arm32v7"
+                      PLATFORM="linux/arm/v7"
                     fi
-                    docker build \
+                    docker buildx build \
                       --no-cache --pull -t ghcr.io/linuxserver/wheelie:sci-${ARCH}-${MATRIXDISTRO} \
+                      --platform=${PLATFORM} \
                       --build-arg DISTRO=${MATRIXDISTRO} \
                       --build-arg ARCH=${ARCH} \
                       --build-arg PACKAGES=\"${PACKAGES}\" \
