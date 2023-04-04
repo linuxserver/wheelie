@@ -54,7 +54,7 @@ jobs:
               if echo "${PACKAGES}" | grep -q "${PACKAGE}"; then
                 break
               fi
-              for ARCH in armv7l armv8l; do
+              for ARCH in armv7l; do
                 if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html"; then
                   echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
                   PACKAGES="${PACKAGE} ${PACKAGES}"

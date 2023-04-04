@@ -21,7 +21,7 @@ pipeline {
         axes {
           axis {
             name 'MATRIXARCH'
-            values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-NATIVE', 'ARMHF-WHEELIE-CHROOT'
+            values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-CHROOT'
           }
           axis {
             name 'MATRIXDISTRO'
@@ -55,23 +55,20 @@ pipeline {
                     DISTROVER=$(echo ${MATRIXDISTRO} | sed 's|.*-||')
                     if [ "${MATRIXARCH}" == "X86-64-MULTI" ]; then
                       ARCH="amd64"
+                      PLATFORM="linux/amd64"
                     elif [ "${MATRIXARCH}" == "ARM64" ]; then
                       ARCH="arm64v8"
-                    elif [ "${MATRIXARCH}" == "ARMHF-WHEELIE-CHROOT" ]; then
-                      ARCH="arm32v8"
+                      PLATFORM="linux/arm64"
                     else
                       ARCH="arm32v7"
+                      PLATFORM="linux/arm/v7"
                     fi
-                    if [ "${ARCH}" == "arm32v8" ]; then
-                      INTERNALARCH="arm32v7"
-                    else
-                      INTERNALARCH="${ARCH}"
-                    fi
-                    docker build \
+                    docker buildx build \
                       --no-cache --pull -t ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} \
+                      --platform=${PLATFORM} \
                       --build-arg DISTRO=${DISTRONAME} \
                       --build-arg DISTROVER=${DISTROVER} \
-                      --build-arg ARCH=${INTERNALARCH} \
+                      --build-arg ARCH=${ARCH} \
                       --build-arg PACKAGES=\"${PACKAGES}\" .
                  '''
               echo 'Pushing images to ghcr'
@@ -83,15 +80,8 @@ pipeline {
                             ARCH="amd64"
                           elif [ "${MATRIXARCH}" == "ARM64" ]; then
                             ARCH="arm64v8"
-                          elif [ "${MATRIXARCH}" == "ARMHF-WHEELIE-CHROOT" ]; then
-                            ARCH="arm32v8"
                           else
                             ARCH="arm32v7"
-                          fi
-                          if [ "${ARCH}" == "arm32v8" ]; then
-                            INTERNALARCH="arm32v7"
-                          else
-                            INTERNALARCH="${ARCH}"
                           fi
                           docker push ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER}
                           docker rmi \
@@ -118,7 +108,7 @@ pipeline {
                   else
                     mkdir -p builds/build-${distro}
                   fi
-                  for arch in amd64 arm32v8 arm64v8 arm32v7; do
+                  for arch in amd64 arm64v8 arm32v7; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
                     docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
