@@ -12,4 +12,3 @@ bluepy
 PyWavelets
 wrapt
 ninja
-rapidfuzz
