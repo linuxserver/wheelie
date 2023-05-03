@@ -45,24 +45,6 @@ pipeline {
             sh "docker buildx build --no-cache --pull --platform=linux/amd64 -t ghcr.io/linuxserver/wheelie:homeassistant-amd64 --build-arg ARCH=amd64 -f Dockerfile.homeassistant ."
           }
         }
-        stage('Build arm32v7') {
-          agent {
-            label 'ARMHF-WHEELIE-CHROOT'
-          }
-          steps {
-            echo "Running on node: ${NODE_NAME}"
-            echo 'Logging into Github'
-            sh '''#! /bin/bash
-                  echo $GITHUB_TOKEN | docker login ghcr.io -u LinuxServer-CI --password-stdin
-                '''
-            sh "docker buildx build --no-cache --pull --platform=linux/arm/v7 -t ghcr.io/linuxserver/wheelie:homeassistant-arm32v7 --build-arg ARCH=arm32v7 -f Dockerfile.homeassistant ."
-            retry(5) {
-              sh "docker push ghcr.io/linuxserver/wheelie:homeassistant-arm32v7"
-            }
-            sh '''docker rmi \
-                  ghcr.io/linuxserver/wheelie:homeassistant-arm32v7 || :'''
-          }
-        }
         stage('Build arm64v8') {
           agent {
             label 'ARM64'
@@ -92,21 +74,16 @@ pipeline {
           sh '''#! /bin/bash
                 set -e
                 mkdir -p build
-                docker pull ghcr.io/linuxserver/wheelie:homeassistant-arm32v7
                 docker pull ghcr.io/linuxserver/wheelie:homeassistant-arm64v8
                 docker create --name wheelie-homeassistant-amd64 ghcr.io/linuxserver/wheelie:homeassistant-amd64 blah
-                docker create --name wheelie-homeassistant-arm32v7 ghcr.io/linuxserver/wheelie:homeassistant-arm32v7 blah
                 docker create --name wheelie-homeassistant-arm64v8 ghcr.io/linuxserver/wheelie:homeassistant-arm64v8 blah
                 docker cp wheelie-homeassistant-amd64:/build/. build/
-                docker cp wheelie-homeassistant-arm32v7:/build/. build/
                 docker cp wheelie-homeassistant-arm64v8:/build/. build/
                 docker rm \
                   wheelie-homeassistant-amd64 \
-                  wheelie-homeassistant-arm32v7 \
                   wheelie-homeassistant-arm64v8
                 docker rmi \
                   ghcr.io/linuxserver/wheelie:homeassistant-amd64 \
-                  ghcr.io/linuxserver/wheelie:homeassistant-arm32v7 \
                   ghcr.io/linuxserver/wheelie:homeassistant-arm64v8
              '''
           script {
