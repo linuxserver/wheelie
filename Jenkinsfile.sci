@@ -124,7 +124,7 @@ pipeline {
                   -v ${PWD}/build-ubuntu:/build-ubuntu \
                   -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
                   -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
-                  ghcr.io/linuxserver/baseimage-alpine:3.14
+                  ghcr.io/linuxserver/baseimage-alpine:3.16
                 docker exec s3cmd /bin/bash -c 'apk add --no-cache py3-pip && pip install s3cmd'
              '''
           sh '''#! /bin/bash

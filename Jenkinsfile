@@ -25,7 +25,7 @@ pipeline {
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.15', 'alpine-3.16', 'alpine-3.17'
+            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.16', 'alpine-3.17'
           }
         }
         stages {
