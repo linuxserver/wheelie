@@ -16,16 +16,16 @@ Only 3 files are user configurable:
 
 After modifying the above 3 files, you can either wait until the scheduler runs (hourly) or manually trigger the github workflow `wheelie-scheduler.yml`
 
-The wheels will be built on native hardware for the following arches: `amd64`, `arm64v8`, `arm32v7` and `arm32v8` (Oracle and AWS armhf builders we use are native `arm64v8` but chrooted for 32bit and are identified by pip as `armv8l` when using the `arm32v7` baseimage).
+The wheels will be built on native hardware for the following arches: `amd64` and `arm64v8`.
 
 If adding a new package to `packages.txt` please make sure the Dockerfile has all the necessary dependencies installed, by testing locally first. To do that, follow the steps below:
 - Clone the repo: `git clone https://github.com/linuxserver/wheelie.git`
 - Enter the folder: `cd wheels`
-- Test all the distros (may need to use the arm32v7 versions if amd64 already has prebuilt wheels in pypi):
-  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.15 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
-  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.14 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
-  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=focal --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
-  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=jammy --build-arg ARCH=arm32v7 --build-arg PACKAGES=gevent .`
+- Test all the distros:
+  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.18 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
+  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.17 --build-arg ARCH=arm64v8 --build-arg PACKAGES=gevent .`
+  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=focal --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
+  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=jammy --build-arg ARCH=arm64v8 --build-arg PACKAGES=gevent .`
 - The package name is case sensitive and should match the listing on pypi.org (ie. `PyYAML`).
 - If the build fails (or if it downloads a prebuilt wheel instead of building), you can add the necessary dependencies to the Dockerfile and/or change the arch, and test again (build cache should save some time).
 - Once confirmed, you can commit your changes to this repo and let the scheduler trigger in the next hourly.
