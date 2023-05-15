@@ -22,11 +22,13 @@ jobs:
             docker run -d --rm --name ${IMAGE}-${TAG} ghcr.io/linuxserver/baseimage-${IMAGE}:${TAG}
             docker exec ${IMAGE}-${TAG} bash -c "\
               if [ -f /usr/bin/apt ]; then \
-                apt-get update && apt-get install -y python3-pip; \
+                apt-get update && apt-get install -y python3-venv; \
               else \
-                apk add --no-cache py3-pip; \
+                apk add --no-cache python3; \
               fi && \
-              pip3 install -U pip"
+              mkdir -p /lsiopy && \
+              python3 -m venv /lsiopy && \
+              /lsiopy/bin/pip install -U pip"
           done
           for PACKAGE in ${ALLPACKAGES}; do
             for DISTRO in ${DISTROS}; do
@@ -40,7 +42,7 @@ jobs:
               else
                 OS="${IMAGE}"
               fi
-              VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "pip install ${PACKAGE}== 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
+              VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "/lsiopy/bin/pip install ${PACKAGE}== 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
               CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
               for ARCH in x86_64 aarch64; do
                 if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -q "${PACKAGE}-${VERSION}.*manylinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -q "${PACKAGE}-${VERSION}.*musllinux.*${ARCH}.whl" "docs/${OS}/index.html"; then
@@ -54,15 +56,6 @@ jobs:
               if echo "${PACKAGES}" | grep -q "${PACKAGE}"; then
                 break
               fi
-              for ARCH in armv7l; do
-                if ! grep -q "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html"; then
-                  echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
-                  PACKAGES="${PACKAGE} ${PACKAGES}"
-                  break
-                else
-                  echo "**** ${PACKAGE}-${VERSION}-${CPYTHON}-${ARCH} wheel already built for ${DISTRO}, skipping ****"
-                fi
-              done
             done
           done
           if [ -n "$PACKAGES" ]; then

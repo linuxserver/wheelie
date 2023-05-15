@@ -21,11 +21,11 @@ pipeline {
         axes {
           axis {
             name 'MATRIXARCH'
-            values 'X86-64-MULTI', 'ARM64', 'ARMHF-WHEELIE-CHROOT'
+            values 'X86-64-MULTI', 'ARM64'
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.16', 'alpine-3.17'
+            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.16', 'alpine-3.17', 'alpine-3.18'
           }
         }
         stages {
@@ -59,9 +59,6 @@ pipeline {
                     elif [ "${MATRIXARCH}" == "ARM64" ]; then
                       ARCH="arm64v8"
                       PLATFORM="linux/arm64"
-                    else
-                      ARCH="arm32v7"
-                      PLATFORM="linux/arm/v7"
                     fi
                     docker buildx build \
                       --no-cache --pull -t ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} \
@@ -80,14 +77,17 @@ pipeline {
                             ARCH="amd64"
                           elif [ "${MATRIXARCH}" == "ARM64" ]; then
                             ARCH="arm64v8"
-                          else
-                            ARCH="arm32v7"
                           fi
                           docker push ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER}
-                          docker rmi \
-                            ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} || :
                        '''
               }
+              echo 'Cleaning up'
+              sh '''#! /bin/bash
+                    containers=$(docker ps -aq)
+                    if [[ -n "${containers}" ]]; then
+                      docker stop ${containers}
+                    fi
+                    docker system prune -af --volumes || : '''
             }
           }
         }
@@ -108,7 +108,7 @@ pipeline {
                   else
                     mkdir -p builds/build-${distro}
                   fi
-                  for arch in amd64 arm64v8 arm32v7; do
+                  for arch in amd64 arm64v8; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
                     docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
@@ -117,8 +117,6 @@ pipeline {
                     else
                       docker cp ${arch}-${distro}:/build/. builds/build-ubuntu/
                     fi
-                    docker rm ${arch}-${distro}
-                    docker rmi ghcr.io/linuxserver/wheelie:${arch}-${distro}
                   done
                 done
              '''
@@ -198,6 +196,14 @@ pipeline {
       }
     }
     cleanup {
+      sh '''#! /bin/bash
+            echo "Performing docker system prune!!"
+            containers=$(docker ps -aq)
+            if [[ -n "${containers}" ]]; then
+              docker stop ${containers}
+            fi
+            docker system prune -af --volumes || :
+         '''
       cleanWs()
     }
   }
