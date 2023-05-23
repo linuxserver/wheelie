@@ -80,10 +80,15 @@ pipeline {
                             ARCH="arm32v7"
                           fi
                           docker push ghcr.io/linuxserver/wheelie:sci-${ARCH}-${MATRIXDISTRO}
-                          docker rmi \
-                            ghcr.io/linuxserver/wheelie:sci-${ARCH}-${MATRIXDISTRO} || :
                        '''
               }
+              echo 'Cleaning up'
+              sh '''#! /bin/bash
+                    containers=$(docker ps -aq)
+                    if [[ -n "${containers}" ]]; then
+                      docker stop ${containers}
+                    fi
+                    docker system prune -af --volumes || : '''
             }
           }
         }
@@ -106,7 +111,6 @@ pipeline {
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:sci-${arch}-${distro} blah
                     docker cp ${arch}-${distro}:/build/. build-ubuntu/
                     docker rm ${arch}-${distro}
-                    docker rmi ghcr.io/linuxserver/wheelie:sci-${arch}-${distro}
                   done
                 done
              '''
@@ -195,6 +199,14 @@ pipeline {
       }
     }
     cleanup {
+      sh '''#! /bin/bash
+            echo "Performing docker system prune!!"
+            containers=$(docker ps -aq)
+            if [[ -n "${containers}" ]]; then
+              docker stop ${containers}
+            fi
+            docker system prune -af --volumes || :
+         '''
       cleanWs()
     }
   }

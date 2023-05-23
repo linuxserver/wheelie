@@ -59,8 +59,13 @@ pipeline {
             retry(5) {
               sh "docker push ghcr.io/linuxserver/wheelie:homeassistant-arm64v8"
             }
-            sh '''docker rmi \
-                  ghcr.io/linuxserver/wheelie:homeassistant-arm64v8 || :'''
+            echo 'Cleaning up'
+            sh '''#! /bin/bash
+                  containers=$(docker ps -aq)
+                  if [[ -n "${containers}" ]]; then
+                    docker stop ${containers}
+                  fi
+                  docker system prune -af --volumes || : '''
           }
         }
       }
@@ -82,9 +87,6 @@ pipeline {
                 docker rm \
                   wheelie-homeassistant-amd64 \
                   wheelie-homeassistant-arm64v8
-                docker rmi \
-                  ghcr.io/linuxserver/wheelie:homeassistant-amd64 \
-                  ghcr.io/linuxserver/wheelie:homeassistant-arm64v8
              '''
           script {
             env.TEMPDIR = sh(
@@ -170,6 +172,14 @@ pipeline {
       }
     }
     cleanup {
+      sh '''#! /bin/bash
+            echo "Performing docker system prune!!"
+            containers=$(docker ps -aq)
+            if [[ -n "${containers}" ]]; then
+              docker stop ${containers}
+            fi
+            docker system prune -af --volumes || :
+         '''
       cleanWs()
     }
   }
