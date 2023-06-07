@@ -124,7 +124,6 @@ pipeline {
                 echo "Stopping s3cmd and removing temp files"
                 docker stop s3cmd
                 rm -rf build
-                #mv -f upstream/requirement*.txt "${TEMPDIR}/wheelie/HA-reqs/"
              '''
           #sh '''#! /bin/bash
                 set -e
