@@ -1,0 +1,103 @@
+ARG ARCH=amd64
+
+FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.18
+
+ARG ARCH=amd64
+
+ARG GRPC_BUILD_WITH_BORING_SSL_ASM=false
+ARG GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=true 
+ARG GRPC_PYTHON_BUILD_WITH_CYTHON=true 
+ARG GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY=true
+
+# environment settings
+ENV PIPFLAGS="--no-cache-dir --use-deprecated=legacy-resolver --find-links https://wheel-index.linuxserver.io/alpine-3.18/ --find-links https://wheel-index.linuxserver.io/homeassistant-3.18/"
+
+# install packages
+RUN \
+  echo "**** install build packages ****" && \
+  apk add --no-cache --virtual=build-dependencies \
+    autoconf \
+    ca-certificates \
+    cargo \
+    cmake \
+    cups-dev \
+    eudev-dev \
+    ffmpeg-dev \
+    gcc \
+    glib-dev \
+    g++ \
+    jq \
+    libffi-dev \
+    jpeg-dev \
+    libxml2-dev \
+    libxslt-dev \
+    make \
+    postgresql-dev \
+    python3-dev \
+    unixodbc-dev \
+    unzip && \
+  echo "**** install runtime packages ****" && \
+  apk add --no-cache --virtual=runtime-dependencies \
+    bluez \
+    bluez-deprecated \
+    bluez-libs \
+    cups-libs \
+    curl \
+    eudev-libs \
+    ffmpeg \
+    iputils \
+    libcap \
+    libjpeg-turbo \
+    libstdc++ \
+    libxslt \
+    mariadb-connector-c \
+    mariadb-connector-c-dev \
+    openssh-client \
+    openssl \
+    postgresql-libs \
+    py3-pip \
+    python3 \
+    tiff && \
+  echo "**** retrieve homeassistant ****" && \
+  mkdir -p \
+    /tmp/core && \
+  export HASS_RELEASE=$(curl -sX GET https://api.github.com/repos/home-assistant/core/releases/latest \
+    | jq -r .tag_name) && \
+  curl -o \
+  /tmp/core.tar.gz -L \
+  "https://github.com/home-assistant/core/archive/${HASS_RELEASE}.tar.gz" && \
+  tar xf \
+    /tmp/core.tar.gz -C \
+    /tmp/core --strip-components=1 && \
+  export HASS_BASE=$(cat /tmp/core/build.yaml \
+    | grep 'amd64: ' \
+    | cut -d: -f3) && \
+  echo "**** Updating pip and building wheels ****" && \
+  python3 -m venv /lsiopy && \
+  pip install -U "pip>=21.0,<22.1" setuptools wheel cython && \
+  mkdir -p /build && \
+  cd /tmp/core && \
+  NUMPY_VER=$(grep "numpy" requirements_all.txt) && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} \
+    "${NUMPY_VER}" && \
+  pip install /build/numpy*.whl && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
+    -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
+    -r requirements_all.txt && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
+    homeassistant==${HASS_RELEASE} && \
+  pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
+    pycups && \
+  echo "**** cleanup ****" && \
+  apk del --purge \
+    build-dependencies \
+    runtime-dependencies && \
+  rm -rf \
+    /tmp/* \
+    /var/lib/apt/lists/* \
+    /var/tmp/* \
+    ${HOME}/.cargo \
+    ${HOME}/.cache && \
+  echo "**** Wheels built are: ****" && \
+  ls /build
