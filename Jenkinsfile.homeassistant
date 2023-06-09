@@ -105,7 +105,7 @@ pipeline {
                   ghcr.io/linuxserver/baseimage-alpine:3.16
                 docker exec s3cmd /bin/bash -c 'apk add --no-cache py3-pip && pip install s3cmd'
                 echo "pushing wheels as necessary"
-                os="homeassistant-3.16"
+                os="homeassistant-3.18"
                 for wheel in $(ls build/); do
                   if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html"; then
                     echo "**** ${wheel} for ${os} is being uploaded to aws ****"

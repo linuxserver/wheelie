@@ -1,6 +1,6 @@
 ARG ARCH=amd64
 
-FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.16
+FROM ghcr.io/linuxserver/baseimage-alpine:${ARCH}-3.18
 
 ARG ARCH=amd64
 
@@ -10,7 +10,7 @@ ARG GRPC_PYTHON_BUILD_WITH_CYTHON=true
 ARG GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY=true
 
 # environment settings
-ENV PIPFLAGS="--no-cache-dir --use-deprecated=legacy-resolver --find-links https://wheel-index.linuxserver.io/alpine-3.16/ --find-links https://wheel-index.linuxserver.io/homeassistant-3.16/"
+ENV PIPFLAGS="--no-cache-dir --find-links https://wheel-index.linuxserver.io/alpine-3.18/ --find-links https://wheel-index.linuxserver.io/homeassistant-3.18/"
 
 # install packages
 RUN \
@@ -64,8 +64,8 @@ RUN \
   export HASS_RELEASE=$(curl -sX GET https://api.github.com/repos/home-assistant/core/releases/latest \
     | jq -r .tag_name) && \
   curl -o \
-  /tmp/core.tar.gz -L \
-  "https://github.com/home-assistant/core/archive/${HASS_RELEASE}.tar.gz" && \
+    /tmp/core.tar.gz -L \
+    "https://github.com/home-assistant/core/archive/${HASS_RELEASE}.tar.gz" && \
   tar xf \
     /tmp/core.tar.gz -C \
     /tmp/core --strip-components=1 && \
@@ -73,16 +73,14 @@ RUN \
     | grep 'amd64: ' \
     | cut -d: -f3) && \
   echo "**** Updating pip and building wheels ****" && \
-  pip3 install -U "pip>=21.0,<22.1" setuptools wheel cython && \
+  python3 -m venv /lsiopy && \
+  pip install -U --no-cache-dir "pip>=21.0,<22.1" setuptools wheel cython && \
   mkdir -p /build && \
   cd /tmp/core && \
   NUMPY_VER=$(grep "numpy" requirements_all.txt) && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     "${NUMPY_VER}" && \
   pip install /build/numpy*.whl && \
-  if [ "${ARCH}" = "arm32v7" ]; then \
-    pip install ${PIPFLAGS} --only-binary cmake cmake; \
-  fi && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
     -r https://raw.githubusercontent.com/home-assistant/docker/${HASS_BASE}/requirements.txt && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
@@ -101,7 +99,5 @@ RUN \
     /var/tmp/* \
     ${HOME}/.cargo \
     ${HOME}/.cache && \
-  echo "**** Renaming wheels if necessary ****" && \
-  /bin/bash -c 'for i in $(ls /build/*armv8l*.whl 2>/dev/null); do echo "processing ${i}" && cp -- "$i" "${i//armv8l/armv7l}"; done' && \
   echo "**** Wheels built are: ****" && \
   ls /build
