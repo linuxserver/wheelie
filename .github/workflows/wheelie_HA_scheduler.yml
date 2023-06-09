@@ -30,7 +30,7 @@ jobs:
           CURRENT_HASH=$(grep -hs ^ HA-reqs/* | md5sum | cut -c1-8)
           NEW_HASH=$(grep -hs ^ upstream/* | md5sum | cut -c1-8)
           if [ ${CURRENT_HASH} != ${NEW_HASH} ]; then
-            if [[ $(curl -sL  https://pypi.python.org/pypi/pyload-ng/json |jq -r '. | .info.version') != "${HASS_RELEASE}" ]]; then
+            if [[ $(curl -sL  https://pypi.python.org/pypi/homeassistant/json | jq -r '. | .info.version') != "${HASS_RELEASE}" ]]; then
               echo "Github release is there but the package is not pushed to PyPI yet, skipping build"
               echo "**** Notifying Discord ****"
               FAILURE_REASON="Changes to HomeAssistant wheel requirements detected, but the package is not pushed to PyPI yet, skipping for now."
