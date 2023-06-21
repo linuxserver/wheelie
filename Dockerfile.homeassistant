@@ -78,6 +78,7 @@ RUN \
   mkdir -p /build && \
   cd /tmp/core && \
   NUMPY_VER=$(grep "numpy" requirements_all.txt) && \
+  PYCUPS_VER=$(grep "pycups" requirements_all.txt | sed 's|.*==||') && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} \
     "${NUMPY_VER}" && \
   pip install /build/numpy*.whl && \
@@ -86,9 +87,9 @@ RUN \
   pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
     -r requirements_all.txt && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
-    homeassistant==${HASS_RELEASE} && \
+    pycups==${PYCUPS_VER} && \
   pip wheel --wheel-dir=/build ${PIPFLAGS} --only-binary cmake \
-    pycups && \
+    homeassistant==${HASS_RELEASE} && \
   echo "**** cleanup ****" && \
   apk del --purge \
     build-dependencies \
