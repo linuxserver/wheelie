@@ -46,6 +46,7 @@ RUN \
       cmake \
       g++ \
       gcc \
+      geos-dev \
       git \
       glib-dev \
       jpeg-dev \
