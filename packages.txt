@@ -1,10 +1,7 @@
 cffi
-cryptography
 gevent
-lxml
 numpy
 pandas
-Pillow
 PyNaCl
 PyYAML
 grpcio
