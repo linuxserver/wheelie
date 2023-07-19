@@ -68,7 +68,7 @@ RUN \
   fi && \
   python3 -m venv /build-env && \
   . /build-env/bin/activate && \
-  pip install -U pip setuptools wheel cython && \
+  pip install -U pip setuptools wheel "cython<3" && \
   mkdir -p /build && \
   if [ -z "${PACKAGES}" ]; then \
     PACKAGES=$(cat /packages.txt); \
