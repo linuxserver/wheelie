@@ -1,5 +1,4 @@
 cffi
-gevent
 numpy
 pandas
 PyNaCl
