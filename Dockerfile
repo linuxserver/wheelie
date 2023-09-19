@@ -73,7 +73,7 @@ RUN \
   if [ -z "${PACKAGES}" ]; then \
     PACKAGES=$(cat /packages.txt); \
   fi && \
-  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v \
+  pip wheel --wheel-dir=/build --find-links="https://wheel-index.linuxserver.io/${INDEXDISTRO}/" --no-cache-dir -v --config-settings=setup-args="-Dallow-noblas=true" \
     ${PACKAGES} && \
   echo "**** Wheels built are: ****" && \
   ls /build
