@@ -25,7 +25,7 @@ pipeline {
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.16', 'alpine-3.17', 'alpine-3.18'
+            values 'ubuntu-focal', 'ubuntu-jammy', 'alpine-3.16', 'alpine-3.17', 'alpine-3.18', 'alpine-3.19'
           }
         }
         stages {
@@ -134,8 +134,8 @@ pipeline {
                   -v ${PWD}/builds:/builds \
                   -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
                   -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
-                  ghcr.io/linuxserver/baseimage-alpine:3.16
-                docker exec s3cmd /bin/bash -c 'apk add --no-cache py3-pip && pip install s3cmd'
+                  ghcr.io/linuxserver/baseimage-alpine:3.18
+                docker exec s3cmd /bin/bash -c 'apk add --no-cache python3 && python3 -m venv /lsiopy && pip install -U pip && pip install s3cmd'
              '''
           sh '''#! /bin/bash
                 set -e
