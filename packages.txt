@@ -1,6 +1,5 @@
 cffi
 numpy
-pandas
 PyNaCl
 PyYAML
 grpcio
