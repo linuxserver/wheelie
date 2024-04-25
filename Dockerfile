@@ -66,8 +66,7 @@ RUN \
   else \
     INDEXDISTRO="${DISTRO}"; \
   fi && \
-  python3 -m venv /build-env && \
-  . /build-env/bin/activate && \
+  python3 -m venv /lsiopy && \
   pip install -U pip setuptools wheel "cython<3" && \
   mkdir -p /build && \
   if [ -z "${PACKAGES}" ]; then \
