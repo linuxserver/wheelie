@@ -1,4 +1,5 @@
 cffi
+hexhamming
 numpy
 PyNaCl
 PyYAML
