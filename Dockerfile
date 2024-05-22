@@ -67,7 +67,7 @@ RUN \
     INDEXDISTRO="${DISTRO}"; \
   fi && \
   python3 -m venv /lsiopy && \
-  pip install -U pip setuptools wheel "cython<3" && \
+  pip install -U pip setuptools wheel cython && \
   mkdir -p /build && \
   if [ -z "${PACKAGES}" ]; then \
     PACKAGES=$(cat /packages.txt); \
