@@ -110,7 +110,7 @@ pipeline {
                   fi
                   for arch in amd64 arm64v8; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
-                    if [[ "${arch}" = "amd64" ]; then
+                    if [[ "${arch}" = "amd64" ]]; then
                       PLATFORM="linux/amd64"
                     else
                       PLATFORM="linux/arm64"
