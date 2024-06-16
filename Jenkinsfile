@@ -110,7 +110,12 @@ pipeline {
                   fi
                   for arch in amd64 arm64v8; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
-                    docker pull ghcr.io/linuxserver/wheelie:${arch}-${distro}
+                    if [[ "${arch}" = "amd64" ]; then
+                      PLATFORM="linux/amd64"
+                    else
+                      PLATFORM="linux/arm64"
+                    fi
+                    docker pull --platform="${PLATFORM}" ghcr.io/linuxserver/wheelie:${arch}-${distro}
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
                     if echo ${distro} | grep alpine; then
                       docker cp ${arch}-${distro}:/build/. builds/build-${distro}/
