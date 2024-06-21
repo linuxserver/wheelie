@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check for updates and trigger
         run: |
@@ -42,7 +42,7 @@ jobs:
               else
                 OS="${IMAGE}"
               fi
-              VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "/lsiopy/bin/pip install ${PACKAGE}== 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
+              VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "/lsiopy/bin/pip install ${PACKAGE}==0 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
               CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
               for ARCH in x86_64 aarch64; do
                 if ! grep -iq "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*manylinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*musllinux.*${ARCH}.whl" "docs/${OS}/index.html"; then
