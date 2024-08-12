@@ -1,8 +1,5 @@
-cffi
 hexhamming
 numpy
 PyNaCl
-PyYAML
 bluepy
-PyWavelets
 wrapt

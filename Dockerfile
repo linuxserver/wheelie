@@ -2,7 +2,7 @@ ARG DISTRO
 ARG DISTROVER
 ARG ARCH
 
-FROM ghcr.io/linuxserver/baseimage-${DISTRO}:${ARCH}-${DISTROVER} as builder
+FROM ghcr.io/linuxserver/baseimage-${DISTRO}:${ARCH}-${DISTROVER} AS builder
 
 ARG DISTRO
 ARG DISTROVER
@@ -84,6 +84,6 @@ RUN \
   echo "**** Wheels built are: ****" && \
   ls /build
 
-FROM scratch as artifacts
+FROM scratch AS artifacts
 
 COPY --from=builder /build /build
