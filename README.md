@@ -22,9 +22,9 @@ If adding a new package to `packages.txt` please make sure the Dockerfile has al
 - Clone the repo: `git clone https://github.com/linuxserver/wheelie.git`
 - Enter the folder: `cd wheels`
 - Test all the distros:
-  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.18 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
-  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.17 --build-arg ARCH=arm64v8 --build-arg PACKAGES=gevent .`
-  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=focal --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
+  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.21 --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
+  - `docker build --build-arg DISTRO=alpine --build-arg DISTROVER=3.20 --build-arg ARCH=arm64v8 --build-arg PACKAGES=gevent .`
+  - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=noble --build-arg ARCH=amd64 --build-arg PACKAGES=gevent .`
   - `docker build --build-arg DISTRO=ubuntu --build-arg DISTROVER=jammy --build-arg ARCH=arm64v8 --build-arg PACKAGES=gevent .`
 - The package name is case sensitive and should match the listing on pypi.org (ie. `PyYAML`).
 - If the build fails (or if it downloads a prebuilt wheel instead of building), you can add the necessary dependencies to the Dockerfile and/or change the arch, and test again (build cache should save some time).
@@ -32,7 +32,7 @@ If adding a new package to `packages.txt` please make sure the Dockerfile has al
 
 To manually trigger a package build for a single package or a list of packages, a new build with parameters can be triggered on Jenkins at the following link: https://ci.linuxserver.io/job/Tools/job/wheelie/. The `PACKAGE` parameter can be set to a package name, or a list of package names (space delimited). Specific package version can also be included (ie. `cryptography==36.0.1`), however if the version defined is not supported on an older cpython version (like Ubuntu bionic's cp36), the build will fail.
 
-## Home Assistant packages (musl)
+## Home Assistant packages (musl) (deprecated and using upstream wheels with custom python builds)
 
 Home Assistant installs over 1,000 pip packages, many of which don't have prebuilt wheels. HA also doesn't rely on the latest versions of these packages, and most if not all of them are pinned to older versions, which makes our regular wheelie not very useful.
 
