@@ -1,5 +1,2 @@
 hexhamming
-numpy
-PyNaCl
 bluepy
-wrapt
