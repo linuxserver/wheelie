@@ -44,15 +44,27 @@ jobs:
               fi
               VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "/lsiopy/bin/pip install ${PACKAGE}==0 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
               CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
-              for ARCH in x86_64 aarch64; do
-                if ! grep -iq "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*manylinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*musllinux.*${ARCH}.whl" "docs/${OS}/index.html"; then
-                  echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
-                  PACKAGES="${PACKAGE} ${PACKAGES}"
-                  break
-                else
-                  echo "**** ${PACKAGE}-${VERSION}-${CPYTHON}-${ARCH} wheel already built for ${DISTRO}, skipping ****"
-                fi
-              done
+              if [ "${DISTRO}" = "alpine-edge" ]; then
+                for ARCH in x86_64 aarch64 riscv64; do
+                  if ! grep -iq "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*manylinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*musllinux.*${ARCH}.whl" "docs/${OS}/index.html"; then
+                    echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
+                    PACKAGES="${PACKAGE} ${PACKAGES}"
+                    break
+                  else
+                    echo "**** ${PACKAGE}-${VERSION}-${CPYTHON}-${ARCH} wheel already built for ${DISTRO}, skipping ****"
+                  fi
+                done
+              else
+                for ARCH in x86_64 aarch64; do
+                  if ! grep -iq "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*manylinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*musllinux.*${ARCH}.whl" "docs/${OS}/index.html"; then
+                    echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
+                    PACKAGES="${PACKAGE} ${PACKAGES}"
+                    break
+                  else
+                    echo "**** ${PACKAGE}-${VERSION}-${CPYTHON}-${ARCH} wheel already built for ${DISTRO}, skipping ****"
+                  fi
+                done
+              fi
               if echo "${PACKAGES}" | grep -q "${PACKAGE}"; then
                 break
               fi

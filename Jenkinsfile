@@ -21,11 +21,23 @@ pipeline {
         axes {
           axis {
             name 'MATRIXARCH'
-            values 'X86-64-MULTI', 'ARM64'
+            values 'X86-64-MULTI', 'ARM64', 'RISCV64'
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-jammy', 'ubuntu-noble', 'alpine-3.19', 'alpine-3.20', 'alpine-3.21'
+            values 'ubuntu-jammy', 'ubuntu-noble', 'alpine-3.19', 'alpine-3.20', 'alpine-3.21', 'alpine-edge'
+          }
+        }
+        excludes {
+          exclude {
+            axis {
+              name 'MATRIXARCH'
+              values 'RISCV64'
+            }
+            axis {
+              name 'MATRIXDISTRO'
+              notValues 'alpine-edge'
+            }
           }
         }
         stages {
@@ -59,6 +71,9 @@ pipeline {
                     elif [ "${MATRIXARCH}" == "ARM64" ]; then
                       ARCH="arm64v8"
                       PLATFORM="linux/arm64"
+                    elif [ "${MATRIXARCH}" == "RISCV64" ]; then
+                      ARCH="riscv64"
+                      PLATFORM="linux/riscv64"
                     fi
                     docker buildx build \
                       --no-cache --pull -t ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER} \
@@ -77,17 +92,30 @@ pipeline {
                             ARCH="amd64"
                           elif [ "${MATRIXARCH}" == "ARM64" ]; then
                             ARCH="arm64v8"
+                          elif [ "${MATRIXARCH}" == "RISCV64" ]; then
+                            ARCH="riscv64"
                           fi
                           docker push ghcr.io/linuxserver/wheelie:${ARCH}-${DISTRONAME}-${DISTROVER}
                        '''
               }
               echo 'Cleaning up'
               sh '''#! /bin/bash
-                    containers=$(docker ps -aq)
+                    echo "Pruning builder"
+                    docker builder prune -f --builder container || :
+                    containers=$(docker ps -q)
                     if [[ -n "${containers}" ]]; then
-                      docker stop ${containers}
+                      BUILDX_CONTAINER_ID=$(docker ps -qf 'name=buildx_buildkit')
+                      for container in ${containers}; do
+                        if [[ "${container}" == "${BUILDX_CONTAINER_ID}" ]]; then
+                          echo "skipping buildx container in docker stop"
+                        else
+                          echo "Stopping container ${container}"
+                          docker stop ${container}
+                        fi
+                      done
                     fi
-                    docker system prune -af --volumes || : '''
+                    docker system prune -f --volumes || :
+                    docker image prune -af || : '''
             }
           }
         }
@@ -108,12 +136,14 @@ pipeline {
                   else
                     mkdir -p builds/build-${distro}
                   fi
-                  for arch in amd64 arm64v8; do
+                  for arch in amd64 arm64v8 riscv64; do
                     echo "**** Retrieving wheels for ${arch}-${distro} ****"
                     if [[ "${arch}" = "amd64" ]]; then
                       PLATFORM="linux/amd64"
-                    else
+                    elif [[ "${arch}" = "arm64v8" ]]; then
                       PLATFORM="linux/arm64"
+                    elif [[ "${arch}" = "riscv64" ]]; then
+                      PLATFORM="linux/riscv64"
                     fi
                     docker pull --platform="${PLATFORM}" ghcr.io/linuxserver/wheelie:${arch}-${distro}
                     docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
@@ -139,7 +169,7 @@ pipeline {
                   -v ${PWD}/builds:/builds \
                   -e AWS_ACCESS_KEY_ID=\"${S3_KEY}\" \
                   -e AWS_SECRET_ACCESS_KEY=\"${S3_SECRET}\" \
-                  ghcr.io/linuxserver/baseimage-alpine:3.18
+                  ghcr.io/linuxserver/baseimage-alpine:3.21
                 docker exec s3cmd /bin/bash -c 'apk add --no-cache python3 && python3 -m venv /lsiopy && pip install -U pip && pip install s3cmd'
              '''
           sh '''#! /bin/bash
@@ -202,12 +232,22 @@ pipeline {
     }
     cleanup {
       sh '''#! /bin/bash
-            echo "Performing docker system prune!!"
-            containers=$(docker ps -aq)
+            echo "Pruning builder"
+            docker builder prune -f --builder container || :
+            containers=$(docker ps -q)
             if [[ -n "${containers}" ]]; then
-              docker stop ${containers}
+              BUILDX_CONTAINER_ID=$(docker ps -qf 'name=buildx_buildkit')
+              for container in ${containers}; do
+                if [[ "${container}" == "${BUILDX_CONTAINER_ID}" ]]; then
+                  echo "skipping buildx container in docker stop"
+                else
+                  echo "Stopping container ${container}"
+                  docker stop ${container}
+                fi
+              done
             fi
-            docker system prune -af --volumes || :
+            docker system prune -f --volumes || :
+            docker image prune -af || :
          '''
       cleanWs()
     }
