@@ -1,3 +1,5 @@
 bluepy
 cffi
 cryptography
+maturin
+orjson
