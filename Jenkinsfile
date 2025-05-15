@@ -145,12 +145,16 @@ pipeline {
                     elif [[ "${arch}" = "riscv64" ]]; then
                       PLATFORM="linux/riscv64"
                     fi
-                    docker pull --platform="${PLATFORM}" ghcr.io/linuxserver/wheelie:${arch}-${distro}
-                    docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
-                    if echo ${distro} | grep alpine; then
-                      docker cp ${arch}-${distro}:/build/. builds/build-${distro}/
+                    if [[ "${arch}" = "riscv64" ]] && [[ "${distro}" != "alpine-edge" ]]; then
+                      echo "Skipping ${arch} for ${distro}"
                     else
-                      docker cp ${arch}-${distro}:/build/. builds/build-ubuntu/
+                      docker pull --platform="${PLATFORM}" ghcr.io/linuxserver/wheelie:${arch}-${distro}
+                      docker create --name ${arch}-${distro} ghcr.io/linuxserver/wheelie:${arch}-${distro} blah
+                      if echo ${distro} | grep alpine; then
+                        docker cp ${arch}-${distro}:/build/. builds/build-${distro}/
+                      else
+                        docker cp ${arch}-${distro}:/build/. builds/build-ubuntu/
+                      fi
                     fi
                   done
                 done
