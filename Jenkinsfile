@@ -145,7 +145,7 @@ pipeline {
                     elif [[ "${arch}" = "riscv64" ]]; then
                       PLATFORM="linux/riscv64"
                     fi
-                    if [[ "${arch}" = "riscv64" ]] && [[ "${distro}" != "alpine-edge" ]]; then
+                    if [[ "${arch}" = "riscv64" ]] && [[ "${distro}" != "alpine-3.22" ]]; then
                       echo "Skipping ${arch} for ${distro}"
                     else
                       docker pull --platform="${PLATFORM}" ghcr.io/linuxserver/wheelie:${arch}-${distro}
