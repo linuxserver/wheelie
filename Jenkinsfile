@@ -25,7 +25,7 @@ pipeline {
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-jammy', 'ubuntu-noble', 'alpine-3.19', 'alpine-3.20', 'alpine-3.21', 'alpine-edge'
+            values 'ubuntu-jammy', 'ubuntu-noble', 'alpine-3.19', 'alpine-3.20', 'alpine-3.21', 'alpine-3.22'
           }
         }
         excludes {
@@ -36,7 +36,7 @@ pipeline {
             }
             axis {
               name 'MATRIXDISTRO'
-              notValues 'alpine-edge'
+              notValues 'alpine-3.22'
             }
           }
         }
@@ -125,7 +125,7 @@ pipeline {
       steps {
         withCredentials([
           string(credentialsId: 'ci-tests-s3-key-id', variable: 'S3_KEY'),
-          string(credentialsId: 'ci-tests-s3-secret-access-key	', variable: 'S3_SECRET') 
+          string(credentialsId: 'ci-tests-s3-secret-access-key	', variable: 'S3_SECRET')
           ]) {
           sh '''#! /bin/bash
                 set -e
@@ -184,7 +184,7 @@ pipeline {
                   for wheel in $(ls build-${os}/); do
                     if ! grep -q "${wheel}" "${TEMPDIR}/wheelie/docs/${os}/index.html" && ! echo "${wheel}" | grep -q "none-any"; then
                       echo "**** ${wheel} for ${os} is being uploaded to aws ****"
-                      UPLOADED="${UPLOADED}\\n${wheel}" 
+                      UPLOADED="${UPLOADED}\\n${wheel}"
                       docker exec s3cmd s3cmd put --no-preserve -m application/octet-stream --acl-public "/builds/build-${os}/${wheel}" "s3://wheels.linuxserver.io/${os}/${wheel}"
                       sed -i "s|</body>|    <a href='https://wheels.linuxserver.io/${os}/${wheel}'>${wheel}</a>\\n    <br />\\n\\n</body>|" "${TEMPDIR}/wheelie/docs/${os}/index.html"
                     else
