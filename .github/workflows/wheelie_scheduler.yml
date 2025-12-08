@@ -44,7 +44,7 @@ jobs:
               fi
               VERSION=$(docker exec ${IMAGE}-${TAG} bash -c "/lsiopy/bin/pip install ${PACKAGE}==0 2>&1 | sed -rn 's|^.*versions:(.*)\).*$|\1|p' | sed 's%[0-9.]*\(a\|b\|rc\|dev\)[0-9]*%%g' | sed 's%,%%g' | awk '{print \$(NF)}'")
               CPYTHON=$(docker exec ${IMAGE}-${TAG} bash -c "printf \"\$(python3 -V)\" | awk '{print \$2}' | awk 'BEGIN{FS=OFS=\".\"} NF--' | sed 's|\.||g' | sed 's|^|cp|g'")
-              if [ "${DISTRO}" = "alpine-3.22" ]; then
+              if [ "${DISTRO}" = "alpine-3.22" ] || [ "${DISTRO}" = "alpine-3.23" ]; then
                 for ARCH in x86_64 aarch64 riscv64; do
                   if ! grep -iq "${PACKAGE}-${VERSION}-${CPYTHON}.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*manylinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*musllinux.*${ARCH}.whl" "docs/${OS}/index.html" && ! grep -iq "${PACKAGE}-${VERSION}.*abi3.*${ARCH}.whl" "docs/${OS}/index.html"; then
                     echo "**** Adding ${PACKAGE}-${VERSION} to build list ****"
