@@ -25,7 +25,7 @@ pipeline {
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-jammy', 'ubuntu-noble', 'alpine-3.19', 'alpine-3.20', 'alpine-3.21', 'alpine-3.22'
+            values 'ubuntu-jammy', 'ubuntu-noble', 'alpine-3.20', 'alpine-3.21', 'alpine-3.22', 'alpine-3.23'
           }
         }
         excludes {
