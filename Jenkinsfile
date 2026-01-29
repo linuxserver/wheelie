@@ -36,7 +36,7 @@ pipeline {
             }
             axis {
               name 'MATRIXDISTRO'
-              notValues 'alpine-3.22', 'alpine-3.23'
+              notValues 'alpine-3.23'
             }
           }
         }
@@ -145,7 +145,7 @@ pipeline {
                     elif [[ "${arch}" = "riscv64" ]]; then
                       PLATFORM="linux/riscv64"
                     fi
-                    if [[ "${arch}" = "riscv64" ]] && [[ "${distro}" != "alpine-3.22" ]] && [[ "${distro}" != "alpine-3.23" ]]; then
+                    if [[ "${arch}" = "riscv64" ]] && [[ "${distro}" != "alpine-3.23" ]]; then
                       echo "Skipping ${arch} for ${distro}"
                     else
                       docker pull --platform="${PLATFORM}" ghcr.io/linuxserver/wheelie:${arch}-${distro}
