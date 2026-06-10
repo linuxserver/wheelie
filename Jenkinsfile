@@ -28,8 +28,8 @@ pipeline {
             values 'ubuntu-noble', 'ubuntu-resolute', 'alpine-3.20', 'alpine-3.21', 'alpine-3.22', 'alpine-3.23', 'alpine-3.24'
           }
         }
-        excludes {
-          /* exclude {
+        /* excludes {
+          exclude {
             axis {
               name 'MATRIXARCH'
               values 'RISCV64'
@@ -38,8 +38,8 @@ pipeline {
               name 'MATRIXDISTRO'
               notValues 'alpine-3.23'
             }
-          } */
-        }
+          }
+        } */
         stages {
           stage('axis') {
             agent none
