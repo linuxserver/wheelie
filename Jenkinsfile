@@ -21,15 +21,15 @@ pipeline {
         axes {
           axis {
             name 'MATRIXARCH'
-            values 'X86-64-MULTI', 'ARM64', 'RISCV64'
+            values 'X86-64-MULTI', 'ARM64'
           }
           axis {
             name 'MATRIXDISTRO'
-            values 'ubuntu-jammy', 'ubuntu-noble', 'alpine-3.20', 'alpine-3.21', 'alpine-3.22', 'alpine-3.23'
+            values 'ubuntu-noble', 'ubuntu-resolute', 'alpine-3.20', 'alpine-3.21', 'alpine-3.22', 'alpine-3.23', 'alpine-3.24'
           }
         }
         excludes {
-          exclude {
+          /* exclude {
             axis {
               name 'MATRIXARCH'
               values 'RISCV64'
@@ -38,7 +38,7 @@ pipeline {
               name 'MATRIXDISTRO'
               notValues 'alpine-3.23'
             }
-          }
+          } */
         }
         stages {
           stage('axis') {
